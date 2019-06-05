@@ -10,6 +10,9 @@ from numpy import *
 x_pad = 26
 y_pad = 120
 scrollDist = 100
+shareY = 0
+screenLength = 600
+iterations = 20
 
 def leftClick():
     leftDown()
@@ -53,95 +56,169 @@ def changeCord(tup, x, y):
     return tup
     
 def main():
-    im = screenGrab()
-    #print("Up arrow colour:", im.getpixel(Cord.upArrow))
-    #print("Blue colour:", im.getpixel(Cord.namePixel))
-    #mousePos(Cord.namePixel)
-    #checkImage("upArrow", im)
-    findUpArrow(im)
+    global iterations
+    mousePos((-x_pad, -y_pad))
+    leftClick()
+    for i in range(0, -iterations, -1):
+        im = screenGrab()
+        findUpArrow(im)
+        time.sleep(0.1)
+
+def moreComments(im):
+    x = x_pad
+    y = screenLength
+    #mousePos((x, y))
+    if im.getpixel((x, y)) == PixelColour.blackBorder:
+        print("########Black Border")
+        im1 = ImageOps.grayscale(screenGrab())
+        a1 = array(im.getcolors())
+        a1 = a1.sum()
+    
+        win32api.mouse_event(win32con.MOUSEEVENTF_WHEEL, 0, 0, -500, 0)
+    
+        im2 = ImageOps.grayscale(screenGrab())
+        a2 = array(im.getcolors())
+        a2 = a2.sum()
+
+        # Image has not changed
+        if a1 == a2:
+            print("Image has not changed")
+            mousePos((x, y - 40))
+            leftClick()
+            time.sleep(10)
+
+            im2 = ImageOps.grayscale(screenGrab())
+            a2 = array(im2.getcolors())
+            a2 = a2.sum()
+            
+            if a1 != a2:
+                print("More comments loaded")
+                win32api.mouse_event(win32con.MOUSEEVENTF_WHEEL, 0, 0, -720, 0)
+                return True
+
+    return False
 
 def distToTop(y):
     #y = y - y_pad
     return math.floor(y / 100)
 
 def findUpArrow(im):
+    global screenLength
     startCord = (Cord.upArrow[0], 0)
     found = False
 
-    #mousePos(startCord)
-    #time.sleep(10)
-    
+    # goes down the screen and looking for an arrow
     while not found:
-        #mousePos(startCord)
-        #time.sleep(0.01)
-        #print(startCord[1])
-        #print(im.getpixel(startCord))
+        # pixel colour matches
+        if moreComments(im):
+            print("The end has been reached")
+            break
+        
         if im.getpixel(startCord) == PixelColour.upArrow:
-            #print("checking")
-            #mousePos(startCord)
+            #print("checking pixel")
+            # check if the found pixel is part of the arrow
             found = checkImage("upArrow", im, startCord)
+            # if not then move down 1 pixel
             if found == False:
                 startCord = changeCord(startCord, 0, 1)
-        elif startCord[1] < 600:
+        elif startCord[1] < screenLength:
+            #print("next pixel")
             startCord = changeCord(startCord, 0, 1)
         else:
+            #print("break")
             break
             
     if found == True:
-        print("Found it!")
-        print(distToTop(startCord[1]))
-        mousePos((startCord[0], startCord[1] - 20))
-        leftClick()
-        win32api.mouse_event(win32con.MOUSEEVENTF_WHEEL, 0, 0, -120 * distToTop(startCord[1]), 0)
-        time.sleep(1)
-        findShare()
+        print("Found arrow!")
+        
+        # clicks just above the arrow so it can scroll down
+        mousePos((startCord[0] - 25, startCord[1] - 15))
+        #leftClick()
+        # rotations is the amount of times it needs to scroll down
+        rotations = distToTop(startCord[1] - 20)
+        win32api.mouse_event(win32con.MOUSEEVENTF_WHEEL, 0, 0, -120 * rotations, 0)
+
+        # the amount of pixels a scroll is
+        global scrollDist
+        # find the new location of the arrow after scrolling down
+        x1 = startCord[0] - 25
+        y1 = startCord[1] - 15 - rotations * scrollDist
+        
+        mousePos((x1, y1))
+        time.sleep(0.1)
+        # finds where the share button is
+        if findShare():
+            found = checkImage("upArrow", im, startCord)
+            
+            # y coordinate of the share button on the screen
+            global shareY
+            # screenshot parameters for comment
+            box = (x1 + x_pad, y1 + y_pad, 965, shareY + 5)
+            print("box: ", box)
+            if (box[1] < box[3] and found):
+                screenshot = ImageGrab.grab(box)
+                screenshot.save(os.getcwd() + '\Cropped_Comments' + '\\scshot_' + str(int(time.time())) + '.png', 'PNG')
+                # moves down so the arrow can no longer be seen
+                time.sleep(0.1)
+                win32api.mouse_event(win32con.MOUSEEVENTF_WHEEL, 0, 0, -240, 0)
+            else:
+                print("Cannot take screenshot")
     else:
-        print("Didn't find it..")
+        #print("Didin't find arrow")
+        win32api.mouse_event(win32con.MOUSEEVENTF_WHEEL, 0, 0, -240, 0)
 
 def findShare():
+    global screenLength
     im = screenGrab()
     startCord = (Cord.shareSide[0], 0)
-    mousePos(startCord)
     found = False
- 
+    
     while not found:
-        #mousePos(startCord)
-        #time.sleep(0.01)
-        #print(startCord[1])
-        #print(im.getpixel(startCord))
         if im.getpixel(startCord) == PixelColour.shareSide:
-            print("checking sharebutton")
-            #mousePos(startCord)
+            print("Checking sharebutton")
             found = checkImage("sharePixel", "null", startCord)
             if found == False:
                 startCord = changeCord(startCord, 0, 1)
-        elif startCord[1] < 600:
+        elif startCord[1] < screenLength:
             startCord = changeCord(startCord, 0, 1)
         else:
             break
             
     if found == True:
         print("Found share!")
+        return True
     else:
+        return False
         print("Didn't find share..")
 
 def checkImage(name, im, startCord):
     succ = True
     init = False
     if name == "upArrow":
-        #startCord = Cord.upArrow
         for i in range(0, -10, -1):
-            #print(i)
-            #print(im.getpixel(startCord))
-            #print(startCord)
             if im.getpixel(startCord) == PixelColour.upArrow:
-                #print("successful")
                 startCord = changeCord(startCord, 0, -1)
                 init = True
             else:
-                #print("fail")
                 succ = False
                 break
+
+        if succ != False:
+            x1 = startCord[0] - 8 + x_pad
+            y1 = startCord[1] - 2 + y_pad
+            x2 = x1 + 14
+            y2 = y1 + 14
+            box = (x1, y1, x2, y2)
+            #print("box: ", box)
+            im = ImageOps.grayscale(ImageGrab.grab(box))
+            a = array(im.getcolors())
+            a = a.sum()
+            #print("arrow gray val", a)
+            #im.save(os.getcwd() + '\\ArrowImg__' + str(int(time.time())) +'.png', 'PNG')
+            if a == GrayValue.arrow:
+                return True
+            else:
+                return False
             
     elif name == "sharePixel":
         shareCord = (startCord[0], startCord[1])
@@ -154,12 +231,19 @@ def checkImage(name, im, startCord):
         a = array(im.getcolors())
         a = a.sum()
         print("a: ", a)
-        im.save(os.getcwd() + '\\seat_one__' + str(int(time.time())) + '.png', 'PNG')
-        mousePos(shareCord)
-        return True
+        
+        if a == GrayValue.share:
+            print("Gray share value match!")
+            global shareY
+
+            shareY = y2
+            
+            return True
+        else:
+            return False
 
     if succ == True and init == True:
-        print("Very Succ!")
+        print("Check image successful")
         return True
     else:
         return False
@@ -171,6 +255,7 @@ class PixelColour:
     nameBlueMain = (71, 164, 221)
     shareMain = (26, 26, 27)
     shareSide = (54, 55, 56)
+    blackBorder = (3, 3, 3)
 
 class Cord:
     # From Paint.NET
@@ -178,6 +263,10 @@ class Cord:
     sharePixel = (70 - x_pad, 549 - y_pad)
     shareSide = (69 - x_pad, 549 - y_pad)
     namePixel = (70 - x_pad, 600 - y_pad)
+
+class GrayValue:
+    share = 1432
+    arrow = 1939
  
 if __name__ == '__main__':
     main()
