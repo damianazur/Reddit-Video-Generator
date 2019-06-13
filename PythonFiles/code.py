@@ -31,6 +31,9 @@ def getComments():
             for comment in submission.comments.list():
                 # comment is the first comment
                 if comment.parent() == submission:
+                    if commentCount == 0:
+                        print(dir(comment))
+                    
                     # key exists
                     if comment.parent() in commentDict:
                         commentDict[comment.parent()].append(comment)
