@@ -20,6 +20,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 import shutil
+#import pyttsx3
+
+
 
 chromePath = "C:\\Users\\User1\\Downloads\\OCALL\\chromedriver.exe"
 chromeOptions = webdriver.ChromeOptions()
@@ -110,9 +113,11 @@ def splitComment():
             sIndex = 0
             endIndex = 0
             commentBody = comment.body
+            print(commentBody)
+            commBodyLen = len(commentBody)
             for char in commentBody:
                 endIndex += 1
-                if ( char == '.' and commentBody[endIndex] != '.' or char == ',' and not commentBody[endIndex - 2].isdigit() or char == '?'):
+                if ( endIndex == commBodyLen or char == '.' and commentBody[endIndex] != '.' or char == ',' and not commentBody[endIndex - 2].isdigit() or char == '?'):
                     sentence = commentBody[sIndex:endIndex]
                     sIndex = endIndex
                     sentences.append(sentence)
@@ -132,6 +137,11 @@ def replaceText(newText):
     #driver.execute_script("arguments[0].innerText = \'" +"\\"+ str(newText)+"\\"+ "\'", element)
     driver.execute_script("arguments[0].textContent = arguments[1];", element, newText)
 
+def clearText():
+    element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "commentBodyText")))
+    newText = ""
+    driver.execute_script("arguments[0].textContent = arguments[1];", element, newText)
+
 # status: hidden/visible
 def divVis(divID, status):
     element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, divID)))
@@ -139,24 +149,48 @@ def divVis(divID, status):
 
 # runs at the start
 def main():
-    getComments(1)
+    getComments(5)
     #printComments()
     startDriver()
     copyFile()
     comments = splitComment()
     #print(comments[0])
-    index = 1
-    divVis("commentFooter", "hidden")
-    for comment in comments[0]:
-        replaceText(comment)
-        captureHTMl(str(index))
-        index += 1
-    
-        if index == len(comments[0]):
-            divVis("commentFooter", "visible")
+    imageCounter = 1
+
+    for comment in comments:
+        commentLen = len(comment)
+        index = 1
+        divVis("commentFooter", "hidden")
+        clearText()
+        for commentPiece in comment:
+            # if second last piece
+            if index == commentLen or commentLen == 1:
+                divVis("commentFooter", "visible")
+                
+            # add text
+            replaceText(commentPiece)
+            time.sleep(0.5)
+            # take screenshot and save it
+            captureHTMl(str(imageCounter))
+            index += 1
+            imageCounter += 1
 
     driver.quit()
+
+def testVoices():
+    engine = pyttsx3.init()
+    voices = engine.getProperty('voices')
+    for voice in voices:
+        print(voice)
+    
+        #if voice.languages[0] == u'en_US':
+        #    engine.setProperty('voice', voice.id)
+        #    break
+
+    #engine.say('Hello World')
+    #engine.runAndWait()
      
 if __name__ == '__main__':
     main()
+    #testVoices()
 
