@@ -15,6 +15,9 @@ from numpy import *
 import click
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 import shutil
 
@@ -23,7 +26,6 @@ chromeOptions = webdriver.ChromeOptions()
 chromeOptions.add_argument('--headless')
 chromeOptions.add_argument(f'window-size={1920}x{1080}')
 driver = 0
-
 
 """
     - Get comments
@@ -45,7 +47,9 @@ reddit = praw.Reddit(client_id = 'W7V-Goda74pQFA',
                      user_agent = 'AzureScale1')
 
 subreddit = reddit.subreddit('askreddit')
-hot_python= subreddit.hot(limit = 1)
+submission1 = reddit.submission(url='https://www.reddit.com/r/AskReddit/comments/c01upz/you_can_fill_a_pool_with_anything_you_want_money/')
+#hot_python = subreddit.hot(limit = 1)
+hot_python = [submission1]
 
 commentDict = {}
 
@@ -85,25 +89,74 @@ def printComments():
 def startDriver():
     global driver
     driver = webdriver.Chrome(executable_path = chromePath, options = chromeOptions)
+    driver.get("http://localhost//TalkReddit//Comments.html")
 
 def captureHTMl(srcNum):
-    driver.get("http://localhost//TalkReddit//Comments.html")
-    driver.execute_script("document.body.style.zoom='250%'")
+    #driver.get("http://localhost//TalkReddit//Comments.html")
+    driver.execute_script("document.body.style.zoom='200%'")
     driver.save_screenshot("attempt"+ srcNum +".png")
-    driver.quit()
+    #driver.quit()
 
 def copyFile():
     shutil.copy2('C://xampp//htdocs//TalkReddit//Comments_Base.html', 'C://xampp//htdocs//TalkReddit//Comments.html')
- 
+
+def splitComment():
+    comments = []
+    
+    for commentArray in commentDict.values():
+        for comment in commentArray:
+            print(20*'-')
+            sentences = []
+            sIndex = 0
+            endIndex = 0
+            commentBody = comment.body
+            for char in commentBody:
+                endIndex += 1
+                if ( char == '.' and commentBody[endIndex] != '.' or char == ',' and not commentBody[endIndex - 2].isdigit() or char == '?'):
+                    sentence = commentBody[sIndex:endIndex]
+                    sIndex = endIndex
+                    sentences.append(sentence)
+                    #print(sentence)
+
+            comments.append(sentences)
+            #break
+
+    return comments
+
+def replaceText(newText):
+    #driver.execute_script("""document.querySelector("username_here");""")
+    #inputElement = driver.find_element_by_id('commentBodyText')
+    element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "commentBodyText")))
+    newText = element.text + newText
+    #print("newText:", newText)
+    #driver.execute_script("arguments[0].innerText = \'" +"\\"+ str(newText)+"\\"+ "\'", element)
+    driver.execute_script("arguments[0].textContent = arguments[1];", element, newText)
+
+# status: hidden/visible
+def divVis(divID, status):
+    element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, divID)))
+    driver.execute_script("arguments[0].style.visibility=\'"+ status + "\'", element);
 
 # runs at the start
 def main():
     getComments(1)
-    printComments()
+    #printComments()
     startDriver()
     copyFile()
-    captureHTMl()
- 
+    comments = splitComment()
+    #print(comments[0])
+    index = 1
+    divVis("commentFooter", "hidden")
+    for comment in comments[0]:
+        replaceText(comment)
+        captureHTMl(str(index))
+        index += 1
+    
+        if index == len(comments[0]):
+            divVis("commentFooter", "visible")
+
+    driver.quit()
+     
 if __name__ == '__main__':
     main()
 
