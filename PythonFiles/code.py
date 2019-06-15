@@ -1,4 +1,5 @@
 import os, sys, time
+import subprocess
 #import PIL
 #from PIL import Image, ImageGrab, ImageOps
 import time, random
@@ -11,6 +12,7 @@ from numpy import *
 #import pdfkit
 #import wkhtmltopdf
 #from wkhtmltopdf import WKhtmlToPdf
+#import ffmpeg
 
 import click
 from selenium import webdriver
@@ -56,6 +58,9 @@ hot_python = [submission1]
 
 commentDict = {}
 
+imagePath = 'C:\\Users\\User1\\Desktop\\Talk Reddit\\VideoMakerRepo\\Image Files\\'
+soundPath = 'C:\\Users\\User1\\Desktop\\Talk Reddit\\VideoMakerRepo\\Sound Files\\'
+
 def getComments(amount):
     for submission in hot_python:
         if not submission.stickied:
@@ -97,7 +102,7 @@ def startDriver():
 def captureHTMl(srcNum):
     #driver.get("http://localhost//TalkReddit//Comments.html")
     driver.execute_script("document.body.style.zoom='200%'")
-    driver.save_screenshot("attempt"+ srcNum +".png")
+    driver.save_screenshot('C:\\Users\\User1\\Desktop\\Talk Reddit\\VideoMakerRepo\\Image Files\\' + "attempt" + srcNum + ".png")
     #driver.quit()
 
 def copyFile():
@@ -147,23 +152,39 @@ def divVis(divID, status):
     element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, divID)))
     driver.execute_script("arguments[0].style.visibility=\'"+ status + "\'", element);
 
+def writeToFile(fileName, s):
+    with open('C:\\Users\\User1\\Desktop\\Talk Reddit\\VideoMakerRepo\\TXT Files\\' + fileName + '.txt','a+') as g:
+        g.write(s + "\n\n")
+    g.close()
+
+def makeVideo():
+    index = 4
+    #print( os.getcwd() )
+    #os.chdir('C://Users/User1/Desktop/Talk Reddit/VideoMakerRepo/PythonFiles/')
+    subprocess.call('ffmpeg -loop 1 -i imageFile.png -i audioFile.wav -c:v libx264 -tune stillimage -c:a aac -b:a 192k -pix_fmt yuv420p -shortest out6.mp4', shell=True)
+    
 # runs at the start
 def main():
-    getComments(5)
+    getComments(1)
     #printComments()
     startDriver()
     copyFile()
     comments = splitComment()
     #print(comments[0])
     imageCounter = 1
-
+    commentIndex = 0
+    
     for comment in comments:
         commentLen = len(comment)
         index = 1
+        commentIndex += 1
         divVis("commentFooter", "hidden")
         clearText()
         for commentPiece in comment:
-            # if second last piece
+            # write to file
+            writeToFile(str(commentIndex), commentPiece)
+            
+            # if second last piece 
             if index == commentLen or commentLen == 1:
                 divVis("commentFooter", "visible")
                 
@@ -191,6 +212,8 @@ def testVoices():
     #engine.runAndWait()
      
 if __name__ == '__main__':
-    main()
+    #writeToFile("1", "String")
+    makeVideo()
+    #main()
     #testVoices()
 
