@@ -59,6 +59,9 @@ hot_python = [submission1]
 commentDict = {}
 
 repoPath = 'C:\\Users\\User1\\Desktop\\Talk Reddit\\VideoMakerRepo\\'
+imagePath = repoPath + 'Image Files\\'
+soundPath = repoPath + 'Sound Files\\'
+videosPath = repoPath + 'Videos\\'
 
 def getComments(amount):
     for submission in hot_python:
@@ -98,16 +101,16 @@ def startDriver():
     driver = webdriver.Chrome(executable_path = chromePath, options = chromeOptions)
     driver.get("http://localhost//TalkReddit//Comments.html")
 
-def captureHTMl(srcNum, threadID, commentID):
+def captureHTMl(srcNum):
     #driver.get("http://localhost//TalkReddit//Comments.html")
     driver.execute_script("document.body.style.zoom='200%'")
-    driver.save_screenshot(repoPath + 'Videos\\' + threadID + "\\" + commentID + "\\" + srcNum + ".png")
+    driver.save_screenshot('C:\\Users\\User1\\Desktop\\Talk Reddit\\VideoMakerRepo\\Image Files\\' + "attempt" + srcNum + ".png")
     #driver.quit()
 
 def copyFile():
     shutil.copy2('C://xampp//htdocs//TalkReddit//Comments_Base.html', 'C://xampp//htdocs//TalkReddit//Comments.html')
 
-def splitComments():
+def splitComment():
     comments = []
     
     for commentArray in commentDict.values():
@@ -129,24 +132,8 @@ def splitComments():
 
             comments.append(sentences)
             #break
-            
+
     return comments
-
-def splitComment(commentBody):
-    sentences = []
-    sIndex = 0
-    endIndex = 0
-    print(commentBody)
-    commBodyLen = len(commentBody)
-    
-    for char in commentBody:
-        endIndex += 1
-        if ( endIndex == commBodyLen or char == '.' and commentBody[endIndex] != '.' or char == ',' and not commentBody[endIndex - 2].isdigit() or char == '?'):
-            sentence = commentBody[sIndex:endIndex]
-            sIndex = endIndex
-            sentences.append(sentence)
-
-    return sentences
 
 def replaceText(newText):
     #driver.execute_script("""document.querySelector("username_here");""")
@@ -167,29 +154,22 @@ def divVis(divID, status):
     element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, divID)))
     driver.execute_script("arguments[0].style.visibility=\'"+ status + "\'", element);
 
-def writeToFile(fileName, s, threadID, commentID):
-    with open(repoPath + 'Videos\\' + threadID + "\\" + commentID + "\\" + fileName + '.txt','a+') as g:
-        g.write(s + "\n\n\n")
+def writeToFile(fileName, s):
+    with open('C:\\Users\\User1\\Desktop\\Talk Reddit\\VideoMakerRepo\\TXT Files\\' + fileName + '.txt','a+') as g:
+        g.write(s + "\n\n")
     g.close()
 
 def createDir(threadID, CommentID):
     path = "../Videos/" + threadID
-    if not os.path.isdir(path):
-        print("thread path doesn't exists")
-        os.mkdir(path)
-
-    path = path + "/" + CommentID
-    if not os.path.isdir(path):
-        print("comment path doesn't exist")
-        os.mkdir(path)
+    if os.path.isdir(path):
+        print("path exists")
+        #shutil.rmtree()
     else:
-        print("deleting path")
-        
-        #os.mkdir(path)
-
-def deleteThread(threadID)
-    path = "../Videos/" + threadID
-    shutil.rmtree(path)
+        os.mkdir(path)
+        path = path + "/" + CommentID
+        os.mkdir(path + "/Audio")
+        os.mkdir(path + "/Image")
+        os.mkdir(path + "/Vide")
 
 def makeVideo():
     index = 4
@@ -199,44 +179,17 @@ def makeVideo():
     
 # runs at the start
 def main():
-    getComments(2)
+    getComments(1)
+    #printComments()
     startDriver()
     copyFile()
+    comments = splitComment()
+    #print(comments[0])
+    imageCounter = 1
     commentIndex = 0
-
-    global submission1
-    for key in commentDict.keys():
-        for comment in commentDict[key]:
-            imageCounter = 1
-            threadID = str(submission1)
-            commentID = str(comment)
-            createDir(threadID, commentID)
-            comment = splitComment(comment.body)
-
-            commentLen = len(comment)
-            index = 1
-            commentIndex += 1
-            divVis("commentFooter", "hidden")
-            clearText()
-            for commentPiece in comment:
-                # write to file
-                writeToFile(str(commentIndex), commentPiece, threadID, commentID)
-                
-                # if second last piece 
-                if index == commentLen or commentLen == 1:
-                    divVis("commentFooter", "visible")
-                    
-                # add text
-                replaceText(commentPiece)
-                time.sleep(0.5)
-                # take screenshot and save it
-                captureHTMl(str(imageCounter), threadID, commentID)
-                index += 1
-                imageCounter += 1
-
-    """
-    comments = splitComments()
+    
     for comment in comments:
+        break
         commentLen = len(comment)
         index = 1
         commentIndex += 1
@@ -257,8 +210,7 @@ def main():
             captureHTMl(str(imageCounter))
             index += 1
             imageCounter += 1
-    """
-    
+
     driver.quit()
 
 def testVoices():
@@ -277,7 +229,7 @@ def testVoices():
 if __name__ == '__main__':
     #writeToFile("1", "String")
     #makeVideo()
-    #main()
-    deleteThread(threadID)
+    main()
+    #createDir("Title")
     #testVoices()
 
