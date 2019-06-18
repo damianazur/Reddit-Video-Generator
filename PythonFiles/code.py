@@ -172,7 +172,6 @@ def writeToFile(fileName, s, threadID, commentID):
 def createDir(threadID, CommentID):
     path = "../Videos/" + threadID
     if not os.path.isdir(path):
-        print("thread path doesn't exists")
         os.mkdir(path)
 
     path = path + "/" + CommentID
@@ -180,14 +179,15 @@ def createDir(threadID, CommentID):
         print("comment path doesn't exist")
         os.mkdir(path)
     # if a folder for a comment already exists then remove the comment folder and create a new one under the same comment ID
-    else:
+    #else:
         #print("comment path already")
-        shutil.rmtree(path)
-        os.mkdir(path)
+        #shutil.rmtree(path)
+        #os.mkdir(path)
 
 def deleteThread(threadID):
     path = "../Videos/" + threadID
-    shutil.rmtree(path)
+    if os.path.isdir(path):
+        shutil.rmtree(path)
 
 def makeVideo(threadID, commentID):
     #index = 4
@@ -218,11 +218,12 @@ def main():
     commentIndex = 0
 
     global submission1
+    threadID = str(submission1)
+    deleteThread(threadID)
     for key in commentDict.keys():
         for comment in commentDict[key]:
             htmlText = ""
             imageCounter = 1
-            threadID = str(submission1)
             commentID = str(comment)
             createDir(threadID, commentID)
             commentBody = comment.body
@@ -300,13 +301,12 @@ def testVoices():
 def testText():
     getComments(8)
     printComments()
+
      
-if __name__ == '__main__':
-    pass
-    #writeToFile("1", "String")
-    #makeVideo("c01upz", "er0sc11")
-    main()
-    #testText()
-    #deleteThread("c01upz")
-    #testVoices()
+#writeToFile("1", "String")
+#makeVideo("c01upz", "er0sc11")
+main()
+#testText()
+#deleteThread("c01upz")
+#testVoices()
 
