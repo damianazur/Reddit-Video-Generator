@@ -1,18 +1,8 @@
 import os, sys, time
 import subprocess
-#import PIL
-#from PIL import Image, ImageGrab, ImageOps
 import time, random
 from random import randrange
-#import win32api, win32con
-#from win32con import *
 from numpy import *
-#import pyperclip
-#import imgkit
-#import pdfkit
-#import wkhtmltopdf
-#from wkhtmltopdf import WKhtmlToPdf
-#import ffmpeg
 import re
 
 import click
@@ -23,11 +13,15 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 import shutil
-#import pyttsx3
 
+thisFilePath = os.getcwd()
+os.chdir('..')
+repoPath = os.getcwd() + "\\" 
+os.chdir(thisFilePath)
+print(repoPath)
+print(os.getcwd())
 
-
-chromePath = "C:\\Users\\User1\\Downloads\\OCALL\\chromedriver.exe"
+chromePath = repoPath + "chromedriver.exe"
 chromeOptions = webdriver.ChromeOptions()
 chromeOptions.add_argument('--headless')
 chromeOptions.add_argument(f'window-size={1920}x{1080}')
@@ -59,9 +53,6 @@ submission1 = reddit.submission(url='https://www.reddit.com/r/AskReddit/comments
 hot_python = [submission1]
 
 commentDict = {}
-
-repoPath = 'C:\\Users\\User1\\Desktop\\Talk Reddit\\VideoMakerRepo\\'
-thisFilePath = repoPath + "PythonFiles"
 
 def getComments(amount):
     for submission in hot_python:
@@ -190,6 +181,7 @@ def createDir(threadID, CommentID):
         os.mkdir(path)
     # if a folder for a comment already exists then remove the comment folder and create a new one under the same comment ID
     else:
+        #print("comment path already")
         shutil.rmtree(path)
         os.mkdir(path)
 
@@ -306,10 +298,11 @@ def testVoices():
     #engine.runAndWait()
 
 def testText():
-    getComments(15)
+    getComments(8)
     printComments()
      
 if __name__ == '__main__':
+    pass
     #writeToFile("1", "String")
     #makeVideo("c01upz", "er0sc11")
     main()
