@@ -150,14 +150,55 @@ def splitComment(commentBody):
 
 def replaceText(newText):
     element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "commentBodyText")))
+    textDivElement = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "commentBodyDiv")))
+    #print("InnerHTML: " + textDivElement.get_attribute('innerHTML'))
     #newText = element.text + newText
     #print(newText)
     driver.execute_script("arguments[0].innerHTML = arguments[1];", element, newText)
+
+def appendDivText(newText):
+    brEndFound = False
+    brStartFound = False
+    if newText[-8:] == "<br><br>":
+        brEndFound = True
+    
+    textDivElement = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "commentBodyDiv")))
+    oldText = textDivElement.get_attribute('innerHTML')
+
+    if "<br><br>" in newText[:11]:
+        brStartFound = True
+        oldText = oldText + '<p class=' + '"rz6fp9-10 himKiy"' + 'id=\"commentBodyText">'
+    
+    newText = newText.replace("<br><br>", "")
+
+    if oldText[-4:] == "</p>":
+        oldText = oldText[:-4]
+    newText = oldText + newText + "</p>"
+
+    if brEndFound == True:
+        newText = newText + '<p class=' + '"rz6fp9-10 himKiy"' + 'id=\"commentBodyText">'
+    
+    driver.execute_script("arguments[0].innerHTML = arguments[1];", textDivElement, newText)
+    #print("---------------------------\n", textDivElement.get_attribute('innerHTML'))
 
 def clearText():
     element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "commentBodyText")))
     newText = ""
     driver.execute_script("arguments[0].textContent = arguments[1];", element, newText)
+
+def clearDiv():
+    element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "commentBodyDiv")))
+    newText = ""
+    driver.execute_script("arguments[0].InnerHTML = arguments[1];", element, newText)
+
+def fillInCommentDetails(username, points, time):
+    usernameBox = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "usernameHere")))
+    pointsBox = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "pointsHere")))
+    timeBox = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "timeHere")))
+
+    driver.execute_script("arguments[0].innerHTML = arguments[1];", usernameBox, username)
+    driver.execute_script("arguments[0].innerHTML = arguments[1];", pointsBox, points)
+    driver.execute_script("arguments[0].innerHTML = arguments[1];", timeBox, time)
 
 # status: hidden/visible
 def divVis(divID, status):
@@ -212,7 +253,7 @@ def checkLineBreak(s):
     
 # runs at the start
 def main():
-    getComments(8)
+    getComments(1)
     startDriver()
     copyFile()
     commentIndex = 0
@@ -222,18 +263,22 @@ def main():
     deleteThread(threadID)
     for key in commentDict.keys():
         for comment in commentDict[key]:
-            htmlText = ""
+            #print(dir(comment))
+            print(comment.author_fullname, comment.score, comment.created_utc)
+            start = True
+            htmlText = '<p class=' + '"rz6fp9-10 himKiy"' + 'id=\"commentBodyText">'
             imageCounter = 1
             commentID = str(comment)
             createDir(threadID, commentID)
             commentBody = comment.body
             comment = splitComment(commentBody)
-
+            #fillInCommentDetails(username, points, time)
+            
             commentLen = len(comment)
             index = 1
             commentIndex += 1
             divVis("commentFooter", "hidden")
-            clearText()
+            #clearDiv()
             for commentPiece in comment:
                 # write to file
                 #writeToFile(str(commentIndex), commentBody, threadID, commentID)
@@ -244,12 +289,19 @@ def main():
                     divVis("commentFooter", "visible")
                     
                 # add text
-                htmlText = htmlText + commentPiece
-                replaceText(htmlText)
+                #htmlText = htmlText + commentPiece
+                #replaceText(htmlText)
+                
                 #replaceText(commentBody)
                 #print(20*'-')
                 #checkLineBreak(commentBody)
                 #print(repr(commentBody))
+
+                if start == True :
+                    commentPiece = htmlText + commentPiece
+                    start = False
+                
+                appendDivText(commentPiece)
                 time.sleep(0.5)
                 # take screenshot and save it
                 captureHTMl(str(imageCounter), threadID, commentID)
