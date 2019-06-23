@@ -3,6 +3,8 @@ import subprocess
 import time, random
 from random import randrange
 from numpy import *
+import win32api, win32con
+from win32con import *
 import re
 
 import click
@@ -13,13 +15,13 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 import shutil
+import pyperclip
+from pynput.keyboard import Key, Controller
 
 thisFilePath = os.getcwd()
 os.chdir('..')
 repoPath = os.getcwd() + "\\" 
 os.chdir(thisFilePath)
-print(repoPath)
-print(os.getcwd())
 
 chromePath = repoPath + "chromedriver.exe"
 chromeOptions = webdriver.ChromeOptions()
@@ -47,14 +49,119 @@ reddit = praw.Reddit(client_id = 'W7V-Goda74pQFA',
                      user_agent = 'AzureScale1')
 
 subreddit = reddit.subreddit('askreddit')
-submission2 = reddit.submission(url='https://www.reddit.com/r/AskReddit/comments/c01upz/you_can_fill_a_pool_with_anything_you_want_money/')
-submission1 = reddit.submission(url='https://www.reddit.com/r/AskReddit/comments/c193hp/whats_the_most_disturbing_secret_youve_been_told/')
+submission1 = reddit.submission(url='https://www.reddit.com/r/AskReddit/comments/c01upz/you_can_fill_a_pool_with_anything_you_want_money/')
+submission2 = reddit.submission(url='https://www.reddit.com/r/AskReddit/comments/c193hp/whats_the_most_disturbing_secret_youve_been_told/')
 #hot_python = subreddit.hot(limit = 1)
 hot_python = [submission1]
 
 commentDict = {}
 endCharacters = ['.', ',', '?', '!']
 otherCharacters = ["“", "\""]
+balabolkaFirstTimeSetup = True
+
+VK_CODE = {'backspace':0x08,
+           'tab':0x09,
+           'clear':0x0C,
+           'enter':0x0D,
+           'shift':0x10,
+           'ctrl':0x11,
+           'alt':0x12,
+           'pause':0x13,
+           'caps_lock':0x14,
+           'esc':0x1B,
+           'spacebar':0x20,
+           'page_up':0x21,
+           'page_down':0x22,
+           'end':0x23,
+           'home':0x24,
+           'left_arrow':0x25,
+           'up_arrow':0x26,
+           'right_arrow':0x27,
+           'down_arrow':0x28,
+           'select':0x29,
+           'print':0x2A,
+           'execute':0x2B,
+           'print_screen':0x2C,
+           'ins':0x2D,
+           'del':0x2E,
+           'help':0x2F,
+           '0':0x30,
+           '1':0x31,
+           '2':0x32,
+           '3':0x33,
+           '4':0x34,
+           '5':0x35,
+           '6':0x36,
+           '7':0x37,
+           '8':0x38,
+           '9':0x39,
+           'a':0x41,
+           'b':0x42,
+           'c':0x43,
+           'd':0x44,
+           'e':0x45,
+           'f':0x46,
+           'g':0x47,
+           'h':0x48,
+           'i':0x49,
+           'j':0x4A,
+           'k':0x4B,
+           'l':0x4C,
+           'm':0x4D,
+           'n':0x4E,
+           'o':0x4F,
+           'p':0x50,
+           'q':0x51,
+           'r':0x52,
+           's':0x53,
+           't':0x54,
+           'u':0x55,
+           'v':0x56,
+           'w':0x57,
+           'x':0x58,
+           'y':0x59,
+           'z':0x5A,
+           'f8':0x77
+}
+
+def leftClick():
+    leftDown()
+    leftUp()
+ 
+def leftDown():
+    win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN,0,0)
+    time.sleep(.1)
+    
+def leftUp():
+    win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP,0,0)
+    time.sleep(.1)
+
+# Used for virtual Ctrl + C
+def pressHoldRelease(args):
+    '''
+    press and hold passed in strings. Once held, release
+    accepts as many arguments as you want.
+    e.g. pressAndHold('left_arrow', 'a','b').
+
+    this is useful for issuing shortcut command or shift commands.
+    e.g. pressHoldRelease('ctrl', 'alt', 'del'), pressHoldRelease('shift','a')
+    '''
+    for i in args:
+        win32api.keybd_event(VK_CODE[i], 0,0,0)
+        time.sleep(.05)
+            
+    for i in args:
+        win32api.keybd_event(VK_CODE[i],0 ,win32con.KEYEVENTF_KEYUP ,0)
+        time.sleep(.1)
+
+def keyPress(args):
+    for i in args:
+        win32api.keybd_event(VK_CODE[i], 0,0,0)
+        win32api.keybd_event(VK_CODE[i],0 ,win32con.KEYEVENTF_KEYUP ,0)
+
+
+def mousePos(cord):
+    win32api.SetCursorPos((cord[0], cord[1]))
 
 def getComments(amount):
     for submission in hot_python:
@@ -96,42 +203,11 @@ def startDriver():
     driver.get("http://localhost//TalkReddit//Comments.html")
 
 def captureHTMl(srcNum, threadID, commentID):
-    #driver.get("http://localhost//TalkReddit//Comments.html")
     driver.execute_script("document.body.style.zoom='200%'")
     driver.save_screenshot(repoPath + 'Videos\\' + threadID + "\\" + commentID + "\\" + srcNum + ".png")
-    #driver.quit()
 
 def copyFile():
     shutil.copy2('C://xampp//htdocs//TalkReddit//Comments_Base.html', 'C://xampp//htdocs//TalkReddit//Comments.html')
-
-def cleanString(s):
-    pass
-
-def splitComments():
-    comments = []
-    
-    for commentArray in commentDict.values():
-        for comment in commentArray:
-            print(20*'-')
-            sentences = []
-            sIndex = 0
-            endIndex = 0
-            commentBody = comment.body
-            print(commentBody)
-            commBodyLen = len(commentBody)
-            for char in commentBody:
-                endIndex += 1
-                if ( endIndex == commBodyLen or char == '.' and commentBody[endIndex] != '.' or char == ',' and not commentBody[endIndex - 2].isdigit() or char == '?'):
-                    sentence = commentBody[sIndex:endIndex]
-                    sentence = cleanString(sentence)
-                    sIndex = endIndex
-                    sentences.append(sentence)
-                    #print(sentence)
-
-            comments.append(sentences)
-            #break
-            
-    return comments
 
 def splitComment(commentBody):
     global endCharacters
@@ -139,49 +215,33 @@ def splitComment(commentBody):
     sentences = []
     sIndex = 0
     endIndex = 0
-    #print(commentBody)
     commentBody = commentBody.replace('\n', '<br>')
     commBodyLen = len(commentBody)
 
     while endIndex < commBodyLen:
-        #print(commentBody[endIndex])
         if commentBody[endIndex] in endCharacters:
             endIndex += 1
-            #print(commBodyLen, endIndex)
-            #if endIndex < commBodyLen:
             while endIndex < commBodyLen and (commentBody[endIndex] in endCharacters or commentBody[endIndex] in otherCharacters or commentBody[endIndex].isdigit()):
-                print("Going through")
+                #print("Going through")
                 endIndex += 1
 
-            sentence = commentBody[sIndex:endIndex]
-            sIndex = endIndex
-            sentences.append(sentence)
+            if not commentBody[endIndex - 1].isdigit():
+                sentence = commentBody[sIndex:endIndex]
+                sIndex = endIndex
+                sentences.append(sentence)
 
         endIndex += 1
 
-    sentence = commentBody[sIndex:endIndex]
-    sentences.append(sentence)
-            
-    """
-    for char in commentBody:
-        endIndex += 1
-        if ( endIndex == commBodyLen or char == '.' and
-             commentBody[endIndex] != '.' or char == ',' and
-             not commentBody[endIndex - 2].isdigit() or char == '?'):
-            
-            sentence = commentBody[sIndex:endIndex]
-            sIndex = endIndex
-            sentences.append(sentence)
-    """
+    if sIndex != endIndex and commentBody[sIndex:endIndex] != "":
+        sentence = commentBody[sIndex:endIndex]
+        print("-#-", sentence)
+        sentences.append(sentence)
 
     return sentences
 
 def replaceText(newText):
     element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "commentBodyText")))
     textDivElement = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "commentBodyDiv")))
-    #print("InnerHTML: " + textDivElement.get_attribute('innerHTML'))
-    #newText = element.text + newText
-    #print(newText)
     driver.execute_script("arguments[0].innerHTML = arguments[1];", element, newText)
 
 def appendDivText(newText):
@@ -207,7 +267,6 @@ def appendDivText(newText):
         newText = newText + '<p class=' + '"rz6fp9-10 himKiy"' + 'id=\"commentBodyText">'
     
     driver.execute_script("arguments[0].innerHTML = arguments[1];", textDivElement, newText)
-    #print("---------------------------\n", textDivElement.get_attribute('innerHTML'))
 
 def clearText():
     element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "commentBodyText")))
@@ -236,7 +295,7 @@ def divVis(divID, status):
 def writeToFile(fileName, s, threadID, commentID):
     with open(repoPath + 'Videos\\' + threadID + "\\" + commentID + "\\" + fileName + '.txt','a+') as g:
         s = s.replace("<br>", "")
-        s = re.sub(r'[^\x00-\x7F]+',' ', s)
+        s = re.sub(r'[^\x00-\x7F]+','\'', s)
         g.write(s + "\n\n\n")
     g.close()
 
@@ -266,18 +325,14 @@ def makeVideo(threadID, commentID):
     path = repoPath + 'Videos\\' + threadID + "\\" + commentID
     os.chdir(path)
     print(os.getcwd())
-    #subprocess.call('ffmpeg -loop 1 -framerate 30 -i 1.png -i 01.wav -c:v libx264 -tune stillimage -c:a aac -b:a 192k -pix_fmt yuv420p -shortest outt1.mp4', shell=True)
-    #subprocess.call('ffmpeg -loop 1 -framerate 30 -i ' + str(i) + '.png -i ' + wavName + '.wav -c:v libx264 -tune stillimage -c:a aac -b:a 192k -pix_fmt yuv420p -shortest outt' + str(i) + '.mp4', shell=True)
-    #                 ffmpeg -r 1 -loop 1 -i 1.png -i 01.wav -c:v libx264 -acodec copy -r 1 -shortest ep1.flv
-    
+
     for i in range (1, 8):
         wavName = str(i)
         if i < 10:
             wavName = "0" + str(i)
             
         subprocess.call('ffmpeg -loop 1 -framerate 200 -i ' + str(i) + '.png -i ' + wavName + '.wav -c:v libx264 -tune stillimage -c:a aac -b:a 192k -pix_fmt yuv420p -shortest out' + str(i) + '.mp4', shell=True)
-        #videoArray.append("out" + str(i))
-    #subprocess.call('ffmpeg -f concat -i soundOrder.txt -c copy outputX.wav', shell=True)
+
     os.chdir(thisFilePath)
     print("Making video ended")
     #concatVideos(videoArray)
@@ -309,7 +364,64 @@ def formatPoints(points):
         thousands = math.floor(points / 1000)
 
         return str(thousands) + "." + str(remainder) + "k"
-        
+
+def getAudioFiles(threadID):
+    #time.sleep(10)
+    global balabolkaFirstTimeSetup
+    keyboard = Controller()
+    threadPath = repoPath + 'Videos\\' + threadID
+    mousePos((170, 1055))
+    leftClick()
+    # Open: ctrl + O
+    # Split and Save: ctrl + F8
+    #
+
+    for folder in os.scandir(threadPath):
+        folderDir = threadPath + "\\" + folder.name
+        for file in os.scandir(folderDir):      
+            if str(file.name).endswith('.txt'):
+                print("File name:", file.name)
+                txtPath = folderDir + "\\" + file.name
+                pyperclip.copy(txtPath)
+                time.sleep(0.5)
+                pressHoldRelease(('ctrl', 'o'))
+                time.sleep(0.5)
+                pressHoldRelease(('ctrl', 'v'))
+                time.sleep(0.5)
+                keyboard.press(Key.enter)
+                time.sleep(0.5)
+                pressHoldRelease(('ctrl', 'f8'))
+                pyperclip.copy(folderDir)
+                time.sleep(0.5)
+                pressHoldRelease(('ctrl', 'v'))
+
+                for i in range (0, 4):
+                    keyboard.press(Key.tab)
+                    time.sleep(0.1)
+                
+                if balabolkaFirstTimeSetup == True:
+                    balabolkaFirstTimeSetup = False
+                    time.sleep(0.1)
+                    keyboard.press(Key.right)
+                    
+                time.sleep(0.1)
+                keyboard.press(Key.tab)
+                time.sleep(0.1)
+                keyboard.press(Key.tab)
+                time.sleep(0.1)
+                keyboard.press(Key.backspace)
+                time.sleep(0.1)
+                keyboard.press(Key.tab)
+                time.sleep(0.1)
+                keyboard.press(Key.tab)
+                time.sleep(0.1)
+                keyboard.press(Key.tab)
+                    
+                time.sleep(0.5)
+                keyboard.press(Key.enter)
+                time.sleep(0.5)
+                keyboard.press(Key.enter)
+                time.sleep(3)
     
 # runs at the start
 def main():
@@ -338,6 +450,7 @@ def main():
             divVis("commentFooter", "hidden")
             clearDiv()
             for commentPiece in comment:
+                print("-", commentPiece)
                 # write to file
                 writeToFile(str(commentIndex), commentPiece, threadID, commentID)
                 
@@ -346,7 +459,7 @@ def main():
                     divVis("commentFooter", "visible")
                     
                 # add text
-                if start == True :
+                if start == True:
                     commentPiece = htmlText + commentPiece
                     start = False
                 appendDivText(commentPiece)
@@ -359,57 +472,13 @@ def main():
 
             #makeVideo(threadID, commentID)
 
-    """
-    comments = splitComments()
-    for comment in comments:
-        commentLen = len(comment)
-        index = 1
-        commentIndex += 1
-        divVis("commentFooter", "hidden")
-        clearText()
-        for commentPiece in comment:
-            # write to file
-            writeToFile(str(commentIndex), commentPiece)
-            
-            # if second last piece 
-            if index == commentLen or commentLen == 1:
-                divVis("commentFooter", "visible")
-                
-            # add text
-            replaceText(commentPiece)
-            time.sleep(0.5)
-            # take screenshot and save it
-            captureHTMl(str(imageCounter))
-            index += 1
-            imageCounter += 1
-    """
-    
     driver.quit()
-
-def testVoices():
-    engine = pyttsx3.init()
-    voices = engine.getProperty('voices')
-    for voice in voices:
-        print(voice)
-    
-        #if voice.languages[0] == u'en_US':
-        #    engine.setProperty('voice', voice.id)
-        #    break
-
-    #engine.say('Hello World')
-    #engine.runAndWait()
-
-def testText():
-    getComments(50)
-    printComments()
+    getAudioFiles(threadID)
 
      
 #writeToFile("1", "String")
-makeVideo("c193hp", "erc08i0")
+#makeVideo("c193hp", "erc08i0")
 #concatVideos(1, 2)
-#main()
-#testText()
-#deleteThread("c01upz")
-#testVoices()
-
+main()
+#getAudioFiles("c01upz")
 

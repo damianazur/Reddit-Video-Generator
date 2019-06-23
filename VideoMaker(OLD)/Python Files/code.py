@@ -115,7 +115,6 @@ def shiftSelect(*args):
     #print("Shift selecting")
     for i in args:
         win32api.keybd_event(VK_CODE[i], 0,0,0)
-        leftClick()
         win32api.keybd_event(VK_CODE[i],0 ,win32con.KEYEVENTF_KEYUP ,0)
 
 # Used for virtual Ctrl + C
@@ -144,7 +143,6 @@ def leftClick():
 def leftDown():
     win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN,0,0)
     time.sleep(.1)
-    #print('left down')
          
 def leftUp():
     win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP,0,0)
