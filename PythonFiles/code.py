@@ -319,28 +319,81 @@ def deleteThread(threadID):
     if os.path.isdir(path):
         shutil.rmtree(path)
 
-def makeVideo(threadID, commentID):
-    videoArray = []
+def makeCommentsVideo(threadID):
     print("Making video")
-    path = repoPath + 'Videos\\' + threadID + "\\" + commentID
-    os.chdir(path)
-    print(os.getcwd())
+    path = threadPath = repoPath + 'Videos\\' + threadID
 
-    for i in range (1, 8):
-        wavName = str(i)
-        if i < 10:
-            wavName = "0" + str(i)
-            
-        subprocess.call('ffmpeg -loop 1 -framerate 200 -i ' + str(i) + '.png -i ' + wavName + '.wav -c:v libx264 -tune stillimage -c:a aac -b:a 192k -pix_fmt yuv420p -shortest out' + str(i) + '.mp4', shell=True)
+    for folder in os.scandir(threadPath):
+        folderDir = threadPath + "\\" + folder.name
+        os.chdir(folderDir)
+        fileIndex = 1
+        print("Accessing:", folder.name)
+        for file in os.scandir(folderDir):      
+            if str(file.name).endswith('.png'):
+                wavName = ""
+                if os.path.isfile(file.name + '.wav'):
+                    wavName = file.name
+                elif:
+                    wavName = "0" + file.name
+                
+                subprocess.call('ffmpeg -loop 1 -framerate 200 -i ' + str(fileIndex) + '.png -i ' + wavName + '.wav -c:v libx264 -tune stillimage -c:a aac -b:a 192k -pix_fmt yuv420p -shortest out' + str(fileIndex) + '.mp4', shell=True)
+                print("Comment video piece done")
+                with open(folderDir + "\\pieceList.txt",'a+') as g:
+                    print("txt file opened")
+                    s = "file \'out"+ str(fileIndex) +".mp4\'"
+                    g.write(s + "\n")
+                    
+                g.close()
+                fileIndex += 1
+
+        print(fileIndex)
+        if fileIndex == 2:
+            print("renaming")
+            os.rename('out1.mp4', 'fullComment.mp4')
+        else:
+            subprocess.call('ffmpeg -safe 0 -f concat -i pieceList.txt -c copy fullComment.mp4', shell=True)
+
+        fullCommentCompiled = False
+        for file in os.scandir(folderDir):
+            if file.name == "fullComment.mp4":
+                fullCommentCompiled = True
+
+        if fullCommentCompiled:
+            subprocess.call('ffmpeg -i fullComment.mp4 -r 30 -y fullComment2.mp4', shell=True)
+            os.remove("fullComment.mp4")
+            os.rename("fullComment2.mp4", "fullComment.mp4")
 
     os.chdir(thisFilePath)
     print("Making video ended")
-    #concatVideos(videoArray)
-    
-def concatVideos(videoArray, cwd):
-    path = repoPath + 'Videos\\c193hp\\erc08i0'
+
+def combineFullComments(threadID):
+    path = threadPath = repoPath + 'Videos\\' + threadID
     os.chdir(path)
-    subprocess.call('ffmpeg -safe 0 -f concat -i list2.txt -c copy output.mp4', shell=True)
+    
+    n = 0
+    firstLineBegining = 'ffmpeg'
+    lineEnd = ' ^ '
+    filterBeginning = '-filter_complex \"'
+    mapSection = '-map "[outv]" -map "[outa]" CompleteVideo.mp4'
+    transitionPath = " -i E:\\Users\\User1\\Documents\\Git\\VideoMakerRepo\\StaticTransition.mp4"
+
+    for folder in os.scandir(threadPath):
+        folderDir = threadPath + "\\" + folder.name
+        if os.path.isdir(folderDir):
+            print("(Full Comment)Accessing:", folder.name)
+            for file in os.scandir(folderDir):      
+                if str(file.name) == "fullComment.mp4":
+                    firstLineBegining = firstLineBegining + " -i " + folder.name + "\\fullComment.mp4" + transitionPath
+                    filterBeginning = filterBeginning + '[' + str(n) + ':v:0]['+ str(n) + ':a:0]' + '[' + str(n+1) + ':v:0]['+ str(n+1) + ':a:0]'
+                    n += 2
+                    
+    filterEnd = 'concat=n='+str(n)+':v=1:a=1[outv][outa]\" ^'
+    compileCode = firstLineBegining + lineEnd + filterBeginning + filterEnd + mapSection
+    #print(compileCode)
+    subprocess.call(compileCode, shell=True)
+    #subprocess.call('ffmpeg -i eqzplik\\fullComment.mp4 -i eqzy9tl\\fullComment.mp4 -i er0g23o\\fullComment.mp4 ^ -filter_complex \"[0:v:0][0:a:0][1:v:0][1:a:0][2:v:0][2:a:0]concat=n=3:v=1:a=1[outv][outa]\" ^-map \"[outv]\" -map \"[outa]\" CompleteVideo.mp4', shell=True)
+
+    os.chdir(thisFilePath)
 
 def formatTime(sec):
     if sec <= 60:
@@ -370,11 +423,12 @@ def getAudioFiles(threadID):
     global balabolkaFirstTimeSetup
     keyboard = Controller()
     threadPath = repoPath + 'Videos\\' + threadID
+    # Click balabolka icon on the very left of the task bar
     mousePos((170, 1055))
     leftClick()
+    
     # Open: ctrl + O
     # Split and Save: ctrl + F8
-    #
 
     for folder in os.scandir(threadPath):
         folderDir = threadPath + "\\" + folder.name
@@ -474,11 +528,15 @@ def main():
 
     driver.quit()
     getAudioFiles(threadID)
+    makeCommentsVideo(threadID)
+    combineFullComments(threadID)
 
      
 #writeToFile("1", "String")
 #makeVideo("c193hp", "erc08i0")
 #concatVideos(1, 2)
-main()
+#main()
 #getAudioFiles("c01upz")
+#makeCommentsVideo("c01upz")
+#combineFullComments("c01upz")
 
