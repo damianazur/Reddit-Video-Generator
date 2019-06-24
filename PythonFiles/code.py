@@ -234,7 +234,7 @@ def splitComment(commentBody):
 
     if sIndex != endIndex and commentBody[sIndex:endIndex] != "":
         sentence = commentBody[sIndex:endIndex]
-        print("-#-", sentence)
+        #print("-#-", sentence)
         sentences.append(sentence)
 
     return sentences
@@ -330,25 +330,28 @@ def makeCommentsVideo(threadID):
         print("Accessing:", folder.name)
         for file in os.scandir(folderDir):      
             if str(file.name).endswith('.png'):
+                print("png: ", file.name[:-4])
                 wavName = ""
-                if os.path.isfile(file.name + '.wav'):
-                    wavName = file.name
-                elif:
-                    wavName = "0" + file.name
-                
+                if os.path.isfile(str(fileIndex) + '.wav'):
+                    wavName = str(fileIndex)
+                else:
+                    wavName = "0" + str(fileIndex)
+
+                print("wav", wavName)
+
                 subprocess.call('ffmpeg -loop 1 -framerate 200 -i ' + str(fileIndex) + '.png -i ' + wavName + '.wav -c:v libx264 -tune stillimage -c:a aac -b:a 192k -pix_fmt yuv420p -shortest out' + str(fileIndex) + '.mp4', shell=True)
-                print("Comment video piece done")
+                #print("Comment video piece done")
                 with open(folderDir + "\\pieceList.txt",'a+') as g:
-                    print("txt file opened")
+                    #print("txt file opened")
                     s = "file \'out"+ str(fileIndex) +".mp4\'"
                     g.write(s + "\n")
                     
                 g.close()
                 fileIndex += 1
 
-        print(fileIndex)
+        #print(fileIndex)
         if fileIndex == 2:
-            print("renaming")
+            #print("renaming")
             os.rename('out1.mp4', 'fullComment.mp4')
         else:
             subprocess.call('ffmpeg -safe 0 -f concat -i pieceList.txt -c copy fullComment.mp4', shell=True)
@@ -504,7 +507,7 @@ def main():
             divVis("commentFooter", "hidden")
             clearDiv()
             for commentPiece in comment:
-                print("-", commentPiece)
+                #print("-", commentPiece)
                 # write to file
                 writeToFile(str(commentIndex), commentPiece, threadID, commentID)
                 
@@ -537,6 +540,6 @@ def main():
 #concatVideos(1, 2)
 #main()
 #getAudioFiles("c01upz")
-#makeCommentsVideo("c01upz")
+makeCommentsVideo("c01upz")
 #combineFullComments("c01upz")
 
