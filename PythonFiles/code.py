@@ -49,15 +49,17 @@ reddit = praw.Reddit(client_id = 'W7V-Goda74pQFA',
                      user_agent = 'AzureScale1')
 
 subreddit = reddit.subreddit('askreddit')
-submission1 = reddit.submission(url='https://www.reddit.com/r/AskReddit/comments/c01upz/you_can_fill_a_pool_with_anything_you_want_money/')
+
+submission3 = reddit.submission(url='https://www.reddit.com/r/AskReddit/comments/c01upz/you_can_fill_a_pool_with_anything_you_want_money/')
 submission2 = reddit.submission(url='https://www.reddit.com/r/AskReddit/comments/c193hp/whats_the_most_disturbing_secret_youve_been_told/')
+submission1 = reddit.submission(url='https://www.reddit.com/r/AskReddit/comments/c4p6l1/what_happened_at_your_work_which_caused_multiple/')
 #hot_python = subreddit.hot(limit = 1)
-hot_python = [submission1]
+hot_python = []
 
 commentDict = {}
 endCharacters = ['.', ',', '?', '!']
 otherCharacters = ["“", "\""]
-balabolkaFirstTimeSetup = True
+balabolkaFirstTimeSetup = False
 
 VK_CODE = {'backspace':0x08,
            'tab':0x09,
@@ -121,8 +123,18 @@ VK_CODE = {'backspace':0x08,
            'x':0x58,
            'y':0x59,
            'z':0x5A,
-           'f8':0x77
+           'f8':0x77,
+           'f4':0x73
 }
+
+def getTopSubredditPosts():
+    top_askreddits = subreddit.top(limit = 10000)
+    subredditsTxt = repoPath + "\\Subreddits.txt"
+    with open(subredditsTxt,'a+') as g:
+        for sub in top_askreddits:
+            title = re.sub(r'[^\x00-\x7F]+','\'', sub.title)
+            g.write(str(sub) + "\t" + title + "\n")           
+    g.close()
 
 def leftClick():
     leftDown()
@@ -176,17 +188,18 @@ def getComments(amount):
                 if comment.parent() == submission:
                     #if commentCount == 0:
                         #print(dir(comment))
-                    
-                    # key exists
-                    if comment.parent() in commentDict:
-                        commentDict[comment.parent()].append(comment)
-                    # key does not exist
-                    else:
-                        commentDict[comment.parent()] = [comment]
 
-                    commentCount += 1
-                    if commentCount >= amount:
-                        break
+                    if len(comment.body) < 1500:
+                        # key exists
+                        if comment.parent() in commentDict:
+                            commentDict[comment.parent()].append(comment)
+                        # key does not exist
+                        else:
+                            commentDict[comment.parent()] = [comment]
+
+                        commentCount += 1
+                        if commentCount >= amount:
+                            break
 
 def printComments():
     for commentArray in commentDict.values():
@@ -203,7 +216,7 @@ def startDriver():
     driver.get("http://localhost//TalkReddit//Comments.html")
 
 def captureHTMl(srcNum, threadID, commentID):
-    driver.execute_script("document.body.style.zoom='200%'")
+    driver.execute_script("document.body.style.zoom='150%'")
     driver.save_screenshot(repoPath + 'Videos\\' + threadID + "\\" + commentID + "\\" + srcNum + ".png")
 
 def copyFile():
@@ -328,26 +341,24 @@ def makeCommentsVideo(threadID):
         os.chdir(folderDir)
         fileIndex = 1
         print("Accessing:", folder.name)
-        for file in os.scandir(folderDir):      
-            if str(file.name).endswith('.png'):
-                print("png: ", file.name[:-4])
-                wavName = ""
-                if os.path.isfile(str(fileIndex) + '.wav'):
-                    wavName = str(fileIndex)
-                else:
-                    wavName = "0" + str(fileIndex)
+        with open(folderDir + "\\pieceList.txt",'a+') as g:
+            for file in os.scandir(folderDir):      
+                if str(file.name).endswith('.png'):
+                    print("png: ", file.name[:-4])
+                    wavName = ""
+                    if os.path.isfile(str(fileIndex) + '.wav'):
+                        wavName = str(fileIndex)
+                    else:
+                        wavName = "0" + str(fileIndex)
 
-                print("wav", wavName)
+                    print("wav", wavName)
 
-                subprocess.call('ffmpeg -loop 1 -framerate 200 -i ' + str(fileIndex) + '.png -i ' + wavName + '.wav -c:v libx264 -tune stillimage -c:a aac -b:a 192k -pix_fmt yuv420p -shortest out' + str(fileIndex) + '.mp4', shell=True)
-                #print("Comment video piece done")
-                with open(folderDir + "\\pieceList.txt",'a+') as g:
-                    #print("txt file opened")
+                    subprocess.call('ffmpeg -loop 1 -framerate 200 -i ' + str(fileIndex) + '.png -i ' + wavName + '.wav -c:v libx264 -tune stillimage -c:a aac -b:a 192k -pix_fmt yuv420p -shortest out' + str(fileIndex) + '.mp4', shell=True)
                     s = "file \'out"+ str(fileIndex) +".mp4\'"
                     g.write(s + "\n")
                     
-                g.close()
-                fileIndex += 1
+                    fileIndex += 1
+        g.close()
 
         #print(fileIndex)
         if fileIndex == 2:
@@ -435,9 +446,13 @@ def getAudioFiles(threadID):
 
     for folder in os.scandir(threadPath):
         folderDir = threadPath + "\\" + folder.name
-        for file in os.scandir(folderDir):      
+        pieceCount = 0
+        for file in os.scandir(folderDir):
+            if str(file.name).endswith('.png'):
+                pieceCount += 1
+            
             if str(file.name).endswith('.txt'):
-                print("File name:", file.name)
+                #print("File name:", file.name)
                 txtPath = folderDir + "\\" + file.name
                 pyperclip.copy(txtPath)
                 time.sleep(0.5)
@@ -478,21 +493,65 @@ def getAudioFiles(threadID):
                 keyboard.press(Key.enter)
                 time.sleep(0.5)
                 keyboard.press(Key.enter)
-                time.sleep(3)
+                time.sleep(3 + 0.3 * pieceCount)
+
+    pressHoldRelease(('shift', 'ctrl', 'f4'))
+    time.sleep(1)
+    mousePos((170, 1055))
+    leftClick()
+
+# for pulling comments
+def queueSubreddits(amount):
+    global hot_python
+    existingTXT = repoPath + "\\completedSubreddits.txt"
+    allTXT = repoPath + "\\Subreddits.txt"
+    
+    i = 0
+    f = open(allTXT, "r")
+    g = open(existingTXT,"r")
+    
+    while i < amount:
+        subID = f.readline()
+        print(subID)
+        while subID in open(existingTXT).read():
+            #print(subID, "exists")
+            subID = f.readline()
+
+        subID = reddit.submission(id=subID)
+            
+        hot_python.append(subID)
+        i += 1
+
+    f.close()
+    g.close()
+
+def queueCombineFullVideo():
+    threadIDs = []
+    for threadID in threadIDs:
+        combineFullComments(threadID)
+    
     
 # runs at the start
 def main():
-    getComments(10)
     startDriver()
     copyFile()
-    commentIndex = 0
+    queueSubreddits(10)
+    getComments(25)
+    
+    #global submission1
+    #threadID = str(submission1)
+    threadID = 0
+    #deleteThread(threadID)
 
-    global submission1
-    threadID = str(submission1)
-    deleteThread(threadID)
     for key in commentDict.keys():
+        threadID = str(key)
+        commentIndex = 0
         for comment in commentDict[key]:
-            fillInCommentDetails(comment.author.name, formatPoints(comment.score), formatTime(time.time() - comment.created_utc))
+            authorName = "deleted"
+            if hasattr(comment.author, 'name'):
+                authorName = comment.author.name
+                
+            fillInCommentDetails(authorName, formatPoints(comment.score), formatTime(time.time() - comment.created_utc))
             start = True
             htmlText = '<p class=' + '"rz6fp9-10 himKiy"' + 'id=\"commentBodyText">'
             imageCounter = 1
@@ -527,19 +586,26 @@ def main():
                 index += 1
                 imageCounter += 1
 
-            #makeVideo(threadID, commentID)
+        subredditsTxt = repoPath + "\\completedSubreddits.txt"
+        with open(subredditsTxt,'a+') as g:
+            g.write(str(threadID) + "\n")           
+        g.close()
 
+        getAudioFiles(threadID)
+        makeCommentsVideo(threadID)
+        #combineFullComments(threadID)
+        
     driver.quit()
-    getAudioFiles(threadID)
-    makeCommentsVideo(threadID)
-    combineFullComments(threadID)
+    #getAudioFiles(threadID)
+    #makeCommentsVideo(threadID)
+    #combineFullComments(threadID)
 
      
 #writeToFile("1", "String")
-#makeVideo("c193hp", "erc08i0")
 #concatVideos(1, 2)
-#main()
-#getAudioFiles("c01upz")
-makeCommentsVideo("c01upz")
-#combineFullComments("c01upz")
+main()
+#getAudioFiles("c4p6l1")
+#makeCommentsVideo("c4p6l1")
+#combineFullComments("c4p6l1")
+#getTopSubredditPosts()
 
