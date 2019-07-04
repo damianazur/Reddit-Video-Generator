@@ -17,6 +17,7 @@ from selenium.webdriver.support import expected_conditions as EC
 import shutil
 import pyperclip
 from pynput.keyboard import Key, Controller
+from moviepy.editor import *
 
 import soundfile as sf
 
@@ -132,6 +133,9 @@ VK_CODE = {'backspace':0x08,
            'f4':0x73
 }
 
+
+# get 10,000 ask reddit questions/ subreddits
+# put them in a text file
 def getTopSubredditPosts():
     top_askreddits = subreddit.top(limit = 10000)
     subredditsTxt = repoPath + "\\Subreddits.txt"
@@ -141,17 +145,21 @@ def getTopSubredditPosts():
             g.write(str(sub) + "\t" + title + "\n")           
     g.close()
 
+
 def leftClick():
     leftDown()
     leftUp()
+
  
 def leftDown():
     win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN,0,0)
     time.sleep(.1)
+
     
 def leftUp():
     win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP,0,0)
     time.sleep(.1)
+
 
 # Used for virtual Ctrl + C
 def pressHoldRelease(args):
@@ -171,6 +179,7 @@ def pressHoldRelease(args):
         win32api.keybd_event(VK_CODE[i],0 ,win32con.KEYEVENTF_KEYUP ,0)
         time.sleep(.1)
 
+
 def keyPress(args):
     for i in args:
         win32api.keybd_event(VK_CODE[i], 0,0,0)
@@ -180,9 +189,13 @@ def keyPress(args):
 def mousePos(cord):
     win32api.SetCursorPos((cord[0], cord[1]))
 
-def getComments(amount):
+
+def getComments(commentVideoLength):
     global questionDict
+    neededCharacterCount = commentVideoLength * 15 * 60
+    
     for submission in hot_python:
+        currentCharacterCount = 0
         if not submission.stickied:
             print(submission.title, "\n")
 
@@ -193,21 +206,24 @@ def getComments(amount):
             numComments = formatPoints(submission.num_comments)
             createdTime = formatTime(time.time() - submission.created_utc)
             score = formatPoints(submission.score)
-            
+
+            # put question details into a dictionary
             questionDict[str(submission)] = {"title" : submission.title, "author" : authorName, "numComments" : numComments, "createdTime" : createdTime, "score" : score}
-            
             #print("submission title: ", questionDict[str(submission)]["title"])
-            
-            # comments in thread
+
+            # I think limit = 0 means that no comment replies are added
             submission.comments.replace_more(limit = 0)
             commentCount = 0
+            # comments in thread
             for comment in submission.comments.list():
                 # comment is the first comment
                 if comment.parent() == submission:
                     #if commentCount == 0:
-                        #print(dir(comment))
 
+                    # if the amount of characters in the comment is less than 1500 (doesn't spill out of the screen)
                     if len(comment.body) < 1500:
+                        currentCharacterCount += len(comment.body)
+                        
                         # key exists
                         if comment.parent() in commentDict:
                             commentDict[comment.parent()].append(comment)
@@ -216,8 +232,10 @@ def getComments(amount):
                             commentDict[comment.parent()] = [comment]
 
                         commentCount += 1
-                        if commentCount >= amount:
+                        if currentCharacterCount >= neededCharacterCount:
+                            print("Character count reach for getting comments")
                             break
+
 
 def printComments():
     for commentArray in commentDict.values():
@@ -228,17 +246,21 @@ def printComments():
             #cleanString(comment.body)
             print(comment.body)
 
+
 def startDriver():
     global driver
     driver = webdriver.Chrome(executable_path = chromePath, options = chromeOptions)
     driver.get("http://localhost//TalkReddit//Comments.html")
 
+
 def captureHTMl(srcNum, threadID, commentID):
     driver.execute_script("document.body.style.zoom='150%'")
     driver.save_screenshot(repoPath + 'Videos\\' + threadID + "\\" + commentID + "\\" + srcNum + ".png")
 
+
 def copyFile():
     shutil.copy2('C://xampp//htdocs//TalkReddit//Comments_Base.html', 'C://xampp//htdocs//TalkReddit//Comments.html')
+
 
 def splitComment(commentBody):
     global endCharacters
@@ -252,14 +274,15 @@ def splitComment(commentBody):
     commBodyLen = len(commentBody)
 
     while endIndex < commBodyLen:
+        # skip urls
         if commentBody[endIndex:endIndex + 6] == "https:":
             while endIndex < commBodyLen - 1 and commentBody[endIndex] != " ":
                 endIndex += 1
-        
+
+        # slip comment at certain characters e.g. '.', '?' etc
         if commentBody[endIndex] in endCharacters:
             endIndex += 1
             while endIndex < commBodyLen and (commentBody[endIndex] in endCharacters or commentBody[endIndex] in otherCharacters or commentBody[endIndex].isdigit()):
-                #print("Going through")
                 endIndex += 1
 
             if not commentBody[endIndex - 1].isdigit():
@@ -271,16 +294,18 @@ def splitComment(commentBody):
 
     if sIndex != endIndex and commentBody[sIndex:endIndex] != "":
         sentence = commentBody[sIndex:endIndex]
-        #print("-#-", sentence)
         sentences.append(sentence)
 
     return sentences
+
 
 def replaceText(newText):
     element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "commentBodyText")))
     textDivElement = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "commentBodyDiv")))
     driver.execute_script("arguments[0].innerHTML = arguments[1];", element, newText)
 
+
+# adds text to the div
 def appendDivText(newText):
     brEndFound = False
     brStartFound = False
@@ -305,15 +330,18 @@ def appendDivText(newText):
     
     driver.execute_script("arguments[0].innerHTML = arguments[1];", textDivElement, newText)
 
+
 def clearText():
     element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "commentBodyText")))
     newText = ""
     driver.execute_script("arguments[0].textContent = arguments[1];", element, newText)
 
+
 def clearDiv():
     element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "commentBodyDiv")))
     newText = ""
     driver.execute_script("arguments[0].innerHTML = arguments[1];", element, newText)
+
 
 def getThreadOpeningVideo(threadID):
     global questionDict
@@ -346,10 +374,12 @@ def fillInCommentDetails(username, points, time):
     driver.execute_script("arguments[0].innerHTML = arguments[1];", pointsBox, points)
     driver.execute_script("arguments[0].innerHTML = arguments[1];", timeBox, time)
 
+
 # status: hidden/visible
 def divVis(divID, status):
     element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, divID)))
     driver.execute_script("arguments[0].style.visibility=\'"+ status + "\'", element);
+
 
 def writeToFile(fileName, s, threadID, commentID):
     with open(repoPath + 'Videos\\' + threadID + "\\" + commentID + "\\" + fileName + '.txt','a+') as g:
@@ -359,6 +389,7 @@ def writeToFile(fileName, s, threadID, commentID):
         g.write(s + "\n\n\n")
     g.close()
 
+
 def createDir(threadID, CommentID):
     path = repoPath + "Videos//" + threadID
     if not os.path.isdir(path):
@@ -366,21 +397,18 @@ def createDir(threadID, CommentID):
 
     path = path + "//" + CommentID
     if not os.path.isdir(path):
-        print("comment path doesn't exist")
+        print(CommentID)
         os.mkdir(path)
-    # if a folder for a comment already exists then remove the comment folder and create a new one under the same comment ID
-    #else:
-        #print("comment path already")
-        #shutil.rmtree(path)
-        #os.mkdir(path)
+
 
 def deleteThread(threadID):
     path = "../Videos/" + threadID
     if os.path.isdir(path):
         shutil.rmtree(path)
 
+
 def makeCommentsVideo(threadID):
-    print("Making video")
+    print("Making comments video: ", threadID)
     path = threadPath = repoPath + 'Videos\\' + threadID
 
     for folder in os.scandir(threadPath):
@@ -391,7 +419,7 @@ def makeCommentsVideo(threadID):
         with open(folderDir + "\\pieceList.txt",'a+') as g:
             for file in os.scandir(folderDir):      
                 if str(file.name).endswith('.png'):
-                    print("png: ", file.name[:-4])
+                    #print("png: ", file.name[:-4])
                     wavName = ""
                     if os.path.isfile(str(fileIndex) + '.wav'):
                         wavName = str(fileIndex)
@@ -399,7 +427,7 @@ def makeCommentsVideo(threadID):
                         wavName = "0" + str(fileIndex)
 
                     if os.path.isfile(wavName + '.wav'):
-                        print("wav:", wavName)
+                        #print("wav:", wavName)
                         subprocess.call('ffmpeg -loop 1 -framerate 200 -i ' + str(fileIndex) + '.png -i ' + wavName + '.wav -c:v libx264 -tune stillimage -c:a aac -b:a 192k -pix_fmt yuv420p -shortest out' + str(fileIndex) + '.mp4', shell=True)
                         s = "file \'out"+ str(fileIndex) +".mp4\'"
                         g.write(s + "\n")
@@ -420,19 +448,29 @@ def makeCommentsVideo(threadID):
         for file in os.scandir(folderDir):
             if file.name == "fullComment.mp4":
                 fullCommentCompiled = True
-        
+
+        audioLength = 0
         if fullCommentCompiled:
+            clip = VideoFileClip("fullComment.mp4")
+            audioLength = str(clip.audio)
+            clip.close()
+        
+        if fullCommentCompiled and audioLength != "None":
             subprocess.call('ffmpeg -i fullComment.mp4 -r 30 -y fullComment2.mp4', shell=True)
             os.remove("fullComment.mp4")
             if folder.name == "Title":
                 os.rename("fullComment2.mp4", "Intro.mp4")
             else:
                 os.rename("fullComment2.mp4", "fullComment.mp4")
+        elif fullCommentCompiled:
+            os.remove("fullComment.mp4")
 
     os.chdir(thisFilePath)
     print("Making video ended")
 
+
 def combineFullComments(threadID):
+    print("Combining full comments: ", threadID)
     path = threadPath = repoPath + 'Videos\\' + threadID
     os.chdir(path)
     
@@ -443,6 +481,7 @@ def combineFullComments(threadID):
     mapSection = '-map [outv] -map [outa] VideoBody.mp4'
     transitionPath = " -i E:\\Users\\User1\\Documents\\Git\\VideoMakerRepo\\StaticTransition.mp4"
 
+    #broken = False
     for folder in os.scandir(threadPath):
         folderDir = threadPath + "\\" + folder.name
         if os.path.isdir(folderDir):
@@ -452,6 +491,9 @@ def combineFullComments(threadID):
                     firstLineBegining = firstLineBegining + transitionPath + " -i " + folder.name + "\\fullComment.mp4"
                     filterBeginning = filterBeginning + '[' + str(n) + ':v]['+ str(n) + ':a]' + '[' + str(n+1) + ':v]['+ str(n+1) + ':a]'
                     n += 2
+
+                    #if n > 2:
+                        #broken = True
                     
     filterEnd = 'concat=n='+str(n)+':v=1:a=1[outv][outa]\" ^'
     compileCode = firstLineBegining + lineEnd + filterBeginning + filterEnd + mapSection
@@ -460,6 +502,7 @@ def combineFullComments(threadID):
     #subprocess.call('ffmpeg -i eqzplik\\fullComment.mp4 -i eqzy9tl\\fullComment.mp4 -i er0g23o\\fullComment.mp4 ^ -filter_complex \"[0:v:0][0:a:0][1:v:0][1:a:0][2:v:0][2:a:0]concat=n=3:v=1:a=1[outv][outa]\" ^-map \"[outv]\" -map \"[outa]\" CompleteVideo.mp4', shell=True)
 
     os.chdir(thisFilePath)
+
 
 def formatTime(sec):
     if sec <= 60:
@@ -476,6 +519,7 @@ def formatTime(sec):
         sec = "1 year ago"
     return sec
 
+
 def formatPoints(points):
     if points > 999:
         remainder = points % 1000
@@ -484,7 +528,9 @@ def formatPoints(points):
 
         return str(thousands) + "." + str(remainder) + "k"
 
+
 def getAudioFiles(threadID, maxCommentVideoLength):
+    print("Getting audio files: ", threadID)
     #time.sleep(10)
     global balabolkaFirstTimeSetup
     maxCommentVideoLength = maxCommentVideoLength * 60
@@ -563,17 +609,19 @@ def getAudioFiles(threadID, maxCommentVideoLength):
 
             for file in os.scandir(folderDir):
                 if str(file.name).endswith('.wav'):
-                    print(os.getcwd())
+                    #print(os.getcwd())
                     f = sf.SoundFile(folderDir + "\\" + file.name)
                     seconds = len(f) / f.samplerate
                     currentThreadLength += seconds
-            print("currentTotal: ", currentThreadLength)
+
+            print("currentTotal: ", math.floor(currentThreadLength), "of", math.floor(maxCommentVideoLength))
                 
 
     pressHoldRelease(('shift', 'ctrl', 'f4'))
     time.sleep(1)
     mousePos((170, 1055))
     leftClick()
+
 
 # for pulling comments
 def queueSubreddits(amount):
@@ -600,14 +648,17 @@ def queueSubreddits(amount):
     f.close()
     g.close()
 
+
 def queueCombineFullVideo():
     threadIDs = []
     for threadID in threadIDs:
         combineFullComments(threadID)
 
+
 def finishVideo(threadID):
+    print("Finishing Video: ", threadID)
     path = repoPath + 'Videos\\' + threadID
-    music = repoPath + "SelectedSoundTrack.mp3"
+    music = repoPath + "SelectedSoundtrack.mp3"
     intro = path + "\\Title\\Intro.mp4"
     endTro = repoPath + "Outtro.mp4"
     os.chdir(path)
@@ -616,27 +667,28 @@ def finishVideo(threadID):
     
     # combine with endtro and intro
     subprocess.call('ffmpeg -i ' + intro + ' -i BodyWithMusic.mp4 -i ' + endTro + ' ^ -filter_complex \"[0:v:0][0:a:0][1:v:0][1:a:0][2:v:0][2:a:0]concat=n=3:v=1:a=1[outv][outa]\" ^-map \"[outv]\" -map \"[outa]\" CompleteVideo.mp4', shell=True)
+
     
 # runs at the start
 def main():
     global startTime
     startDriver()
     global driver
-    #copyFile()
-    queueSubreddits(5)
-    getComments(10)
-    
-    #global submission1
-    #threadID = str(submission1)
-    threadID = 0
-    #deleteThread(threadID)
 
+    # minutes
+    commentVideoLength = 15
+    
+    queueSubreddits(5)
+    getComments(commentVideoLength)
+        
+    threadID = 0
     for key in commentDict.keys():
         driver.get("http://localhost//TalkReddit//Question.html")
         threadID = str(key)
         getThreadOpeningVideo(threadID)
         commentIndex = 0
         driver.get("http://localhost//TalkReddit//Comments.html")
+        print("\n\n\nMaking Comment Folders: ")
         for comment in commentDict[key]:
             authorName = "deleted"
             if hasattr(comment.author, 'name'):
@@ -677,27 +729,23 @@ def main():
                 index += 1
                 imageCounter += 1
 
+        getAudioFiles(threadID, commentVideoLength)
+        makeCommentsVideo(threadID)
+        combineFullComments(threadID)
+        finishVideo(threadID)
+
         subredditsTxt = repoPath + "\\completedSubreddits.txt"
         with open(subredditsTxt,'a+') as g:
             g.write(str(threadID) + "\n Duration: " + str(math.floor((time.time() - startTime) / 60)) + " minutes \n")
             startTime = time.time()
         g.close()
-
-        # minutes
-        commentVideoLength = 15
-        getAudioFiles(threadID, commentVideoLength)
-        makeCommentsVideo(threadID)
-        combineFullComments(threadID)
-        finishVideo(threadID)
         
     driver.quit()
 
-     
-#writeToFile("1", "String")
-#concatVideos(1, 2)
-main()
+    
+#main()
 #getAudioFiles("80phz7", 15)
-#makeCommentsVideo("80phz7")
-#combineFullComments("80phz7")
+#makeCommentsVideo("99eh6b")
+#combineFullComments("99eh6b")
+finishVideo("99eh6b")
 #getTopSubredditPosts()
-#finishVideo("80phz7")
