@@ -354,7 +354,7 @@ def writeToFile(fileName, s, threadID, commentID):
     with open(repoPath + 'Videos\\' + threadID + "\\" + commentID + "\\" + fileName + '.txt','a+') as g:
         s = s.replace("<br>", "")
         s = re.sub(r'[^\x00-\x7F]+','\'', s)
-        s = re.sub(r'https?://\S+', '', s)
+        s = re.sub(r'https?://\S+', 'https link.', s)
         g.write(s + "\n\n\n")
     g.close()
 
@@ -611,7 +611,7 @@ def finishVideo(threadID):
     endTro = repoPath + "Outtro.mp4"
     os.chdir(path)
     # add music
-    subprocess.call('ffmpeg -i '+ music +' -i VideoBody.mp4 -filter_complex "[0:a]volume=0.2[a0];[a0][1:a]amerge,pan=stereo|c0<c0+c2|c1<c1+c3[out]" -map 1:v -map "[out]" -c:v copy -shortest BodyWithMusic.mp4', shell=True)
+    subprocess.call('ffmpeg -i '+ music +' -i VideoBody.mp4 -filter_complex "[0:a]volume=0.2[a0];[1:a][a0]amerge,pan=stereo|c0<c0+c2|c1<c1+c3[out]" -map 1:v -map "[out]" -c:v copy -shortest BodyWithMusic.mp4', shell=True)
     
     # combine with endtro and intro
     subprocess.call('ffmpeg -i ' + intro + ' -i BodyWithMusic.mp4 -i ' + endTro + ' ^ -filter_complex \"[0:v:0][0:a:0][1:v:0][1:a:0][2:v:0][2:a:0]concat=n=3:v=1:a=1[outv][outa]\" ^-map \"[outv]\" -map \"[outa]\" CompleteVideo.mp4', shell=True)
