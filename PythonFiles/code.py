@@ -58,6 +58,7 @@ submission1 = reddit.submission(url='https://www.reddit.com/r/AskReddit/comments
 #hot_python = subreddit.hot(limit = 1)
 hot_python = []
 
+startTime = time.time()
 commentDict = {}
 questionDict = {}
 urlEndings = [".com", ".html", ".uk", ".php", ".html", ".org", ".net", ".eu"]
@@ -359,11 +360,11 @@ def writeToFile(fileName, s, threadID, commentID):
     g.close()
 
 def createDir(threadID, CommentID):
-    path = "../Videos/" + threadID
+    path = repoPath + "Videos//" + threadID
     if not os.path.isdir(path):
         os.mkdir(path)
 
-    path = path + "/" + CommentID
+    path = path + "//" + CommentID
     if not os.path.isdir(path):
         print("comment path doesn't exist")
         os.mkdir(path)
@@ -618,19 +619,20 @@ def finishVideo(threadID):
     
 # runs at the start
 def main():
+    global startTime
     startDriver()
     global driver
     #copyFile()
-    queueSubreddits(1)
-    getComments(15)
+    queueSubreddits(5)
+    getComments(10)
     
     #global submission1
     #threadID = str(submission1)
     threadID = 0
     #deleteThread(threadID)
 
-    driver.get("http://localhost//TalkReddit//Question.html")
     for key in commentDict.keys():
+        driver.get("http://localhost//TalkReddit//Question.html")
         threadID = str(key)
         getThreadOpeningVideo(threadID)
         commentIndex = 0
@@ -677,26 +679,25 @@ def main():
 
         subredditsTxt = repoPath + "\\completedSubreddits.txt"
         with open(subredditsTxt,'a+') as g:
-            g.write(str(threadID) + "\n")           
+            g.write(str(threadID) + "\n Duration: " + str(math.floor((time.time() - startTime) / 60)) + " minutes \n")
+            startTime = time.time()
         g.close()
 
         # minutes
-        commentVideoLength = 1
+        commentVideoLength = 15
         getAudioFiles(threadID, commentVideoLength)
         makeCommentsVideo(threadID)
         combineFullComments(threadID)
+        finishVideo(threadID)
         
     driver.quit()
-    #getAudioFiles(threadID)
-    #makeCommentsVideo(threadID)
-    #combineFullComments(threadID)
 
      
 #writeToFile("1", "String")
 #concatVideos(1, 2)
-#main()
+main()
 #getAudioFiles("80phz7", 15)
 #makeCommentsVideo("80phz7")
 #combineFullComments("80phz7")
 #getTopSubredditPosts()
-finishVideo("80phz7")
+#finishVideo("80phz7")
