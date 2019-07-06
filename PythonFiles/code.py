@@ -412,6 +412,15 @@ def makeCommentsVideo(threadID):
     path = threadPath = repoPath + 'Videos\\' + threadID
 
     for folder in os.scandir(threadPath):
+        n = 1
+        firstLineBegining = 'ffmpeg -i E:\\Users\\User1\\Documents\\Git\\VideoMakerRepo\\StaticTransition.mp4'
+        lineEnd = ' ^ '
+        filterBeginning = '-filter_complex \"[0:v][0:a]'
+        mapSection = '-map [outv] -map [outa] fullComment.mp4'
+        transitionPath = " -i E:\\Users\\User1\\Documents\\Git\\VideoMakerRepo\\StaticTransition.mp4"
+        
+        firstLine = True
+        #transitionPath = repoPath + "StaticTransition.mp4"
         folderDir = threadPath + "\\" + folder.name
         os.chdir(folderDir)
         fileIndex = 1
@@ -429,26 +438,31 @@ def makeCommentsVideo(threadID):
                     if os.path.isfile(wavName + '.wav'):
                         #print("wav:", wavName)
                         subprocess.call('ffmpeg -loop 1 -framerate 200 -i ' + str(fileIndex) + '.png -i ' + wavName + '.wav -c:v libx264 -tune stillimage -c:a aac -b:a 192k -pix_fmt yuv420p -shortest out' + str(fileIndex) + '.mp4', shell=True)
+
+                        """
                         s = "file \'out"+ str(fileIndex) +".mp4\'"
+                        if firstLine:
+                            firstLine = False
+                            s = "file \'" + transitionPath + "\' \n" + s
+                            
                         g.write(s + "\n")
-                    
+                        """
+                        
+                        firstLineBegining = firstLineBegining + " -i out" + str(fileIndex) + ".mp4"
+                        filterBeginning = filterBeginning + '[' + str(n) + ':v]['+ str(n) + ':a]'
+                        n += 1
                         fileIndex += 1
                     else:
                         print("wav: N/A")
-        g.close()
+        #g.close()
+                        
+        filterEnd = 'concat=n='+str(n)+':v=1:a=1[outv][outa]\" ^'
+        compileCode = firstLineBegining + lineEnd + filterBeginning + filterEnd + mapSection
+        #print(compileCode)
+        subprocess.call(compileCode, shell=True)
 
-        #print(fileIndex)
-        if fileIndex == 2:
-            #print("renaming")
-            os.rename('out1.mp4', 'fullComment.mp4')
-        else:
-            subprocess.call('ffmpeg -safe 0 -f concat -i pieceList.txt -c copy fullComment.mp4', shell=True)
-
-        fullCommentCompiled = False
-        for file in os.scandir(folderDir):
-            if file.name == "fullComment.mp4":
-                fullCommentCompiled = True
-
+        
+        """
         audioLength = 0
         if fullCommentCompiled:
             clip = VideoFileClip("fullComment.mp4")
@@ -464,7 +478,8 @@ def makeCommentsVideo(threadID):
                 os.rename("fullComment2.mp4", "fullComment.mp4")
         elif fullCommentCompiled:
             os.remove("fullComment.mp4")
-
+        """
+        
     os.chdir(thisFilePath)
     print("Making video ended")
 
@@ -481,24 +496,27 @@ def combineFullComments(threadID):
     mapSection = '-map [outv] -map [outa] VideoBody.mp4'
     transitionPath = " -i E:\\Users\\User1\\Documents\\Git\\VideoMakerRepo\\StaticTransition.mp4"
 
-    #broken = False
+    broken = False
     for folder in os.scandir(threadPath):
+        if broken == True:
+            break
         folderDir = threadPath + "\\" + folder.name
         if os.path.isdir(folderDir):
             for file in os.scandir(folderDir):
                 if str(file.name) == "fullComment.mp4":
                     print("(Full Comment)Accessing:", folder.name)
-                    firstLineBegining = firstLineBegining + transitionPath + " -i " + folder.name + "\\fullComment.mp4"
-                    filterBeginning = filterBeginning + '[' + str(n) + ':v]['+ str(n) + ':a]' + '[' + str(n+1) + ':v]['+ str(n+1) + ':a]'
-                    n += 2
+                    firstLineBegining = firstLineBegining + " -i " + folder.name + "\\fullComment.mp4"
+                    filterBeginning = filterBeginning + '[' + str(n) + ':v]['+ str(n) + ':a]'
+                    n += 1
 
-                    #if n > 2:
-                        #broken = True
+                    if n > 95:
+                        broken = True
+                        break
                     
     filterEnd = 'concat=n='+str(n)+':v=1:a=1[outv][outa]\" ^'
     compileCode = firstLineBegining + lineEnd + filterBeginning + filterEnd + mapSection
-    #print(compileCode)
-    subprocess.call(compileCode, shell=True)
+    print(compileCode)
+    #subprocess.call(compileCode, shell=True)
     #subprocess.call('ffmpeg -i eqzplik\\fullComment.mp4 -i eqzy9tl\\fullComment.mp4 -i er0g23o\\fullComment.mp4 ^ -filter_complex \"[0:v:0][0:a:0][1:v:0][1:a:0][2:v:0][2:a:0]concat=n=3:v=1:a=1[outv][outa]\" ^-map \"[outv]\" -map \"[outa]\" CompleteVideo.mp4', shell=True)
 
     os.chdir(thisFilePath)
@@ -663,9 +681,11 @@ def finishVideo(threadID):
     endTro = repoPath + "Outtro.mp4"
     os.chdir(path)
     # add music
+    print('ffmpeg -i '+ music +' -i VideoBody.mp4 -filter_complex "[0:a]volume=0.2[a0];[1:a][a0]amerge,pan=stereo|c0<c0+c2|c1<c1+c3[out]" -map 1:v -map "[out]" -c:v copy -shortest BodyWithMusic.mp4')
     subprocess.call('ffmpeg -i '+ music +' -i VideoBody.mp4 -filter_complex "[0:a]volume=0.2[a0];[1:a][a0]amerge,pan=stereo|c0<c0+c2|c1<c1+c3[out]" -map 1:v -map "[out]" -c:v copy -shortest BodyWithMusic.mp4', shell=True)
     
     # combine with endtro and intro
+    print('ffmpeg -i ' + intro + ' -i BodyWithMusic.mp4 -i ' + endTro + ' ^ -filter_complex \"[0:v:0][0:a:0][1:v:0][1:a:0][2:v:0][2:a:0]concat=n=3:v=1:a=1[outv][outa]\" ^-map \"[outv]\" -map \"[outa]\" CompleteVideo.mp4')
     subprocess.call('ffmpeg -i ' + intro + ' -i BodyWithMusic.mp4 -i ' + endTro + ' ^ -filter_complex \"[0:v:0][0:a:0][1:v:0][1:a:0][2:v:0][2:a:0]concat=n=3:v=1:a=1[outv][outa]\" ^-map \"[outv]\" -map \"[outa]\" CompleteVideo.mp4', shell=True)
 
     
@@ -747,5 +767,5 @@ def main():
 #getAudioFiles("80phz7", 15)
 #makeCommentsVideo("99eh6b")
 #combineFullComments("99eh6b")
-finishVideo("99eh6b")
+#finishVideo("atn6h6")
 #getTopSubredditPosts()
