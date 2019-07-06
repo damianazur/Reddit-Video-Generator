@@ -17,7 +17,7 @@ from selenium.webdriver.support import expected_conditions as EC
 import shutil
 import pyperclip
 from pynput.keyboard import Key, Controller
-from moviepy.editor import *
+from moviepy.editor import VideoFileClip
 
 import soundfile as sf
 
@@ -65,6 +65,17 @@ questionDict = {}
 urlEndings = [".com", ".html", ".uk", ".php", ".html", ".org", ".net", ".eu"]
 endCharacters = ['.', ',', '?', '!']
 otherCharacters = ["“", "\""]
+curseWords = {"fuck" : "f<span style='color: #303030'>&#9608;</span>ck",
+              "cunt" : "c<span style='color: #303030'>&#9608;</span>nt",
+              "nigger" : "ni<span style='color: #303030'>&#9608;</span>er",
+              "shit" : "sh<span style='color: #303030'>&#9608;</span>t",
+              "bitch" : "b<span style='color: #303030'>&#9608;</span>tch",
+              "dick" : "d<span style='color: #303030'>&#9608;</span>ck",
+              "ass" : "as<span style='color: #303030'>&#9608;</span>",
+              "whore" : "wh<span style='color: #303030'>&#9608;</span>re",
+              "slut" : "sl<span style='color: #303030'>&#9608;</span>t",
+              "pussy" : "pu<span style='color: #303030'>&#9608;</span>sy"}
+
 balabolkaFirstTimeSetup = False
 
 VK_CODE = {'backspace':0x08,
@@ -197,6 +208,7 @@ def getComments(commentVideoLength):
     for submission in hot_python:
         currentCharacterCount = 0
         if not submission.stickied:
+            print(submission)
             print(submission.title, "\n")
 
             authorName = "deleted"
@@ -221,7 +233,7 @@ def getComments(commentVideoLength):
                     #if commentCount == 0:
 
                     # if the amount of characters in the comment is less than 1500 (doesn't spill out of the screen)
-                    if len(comment.body) < 1500:
+                    if len(comment.body) < 1500 and comment.body != "[removed]":
                         currentCharacterCount += len(comment.body)
                         
                         # key exists
@@ -233,7 +245,7 @@ def getComments(commentVideoLength):
 
                         commentCount += 1
                         if currentCharacterCount >= neededCharacterCount:
-                            print("Character count reach for getting comments")
+                            #print("Character count reach for getting comments")
                             break
 
 
@@ -459,7 +471,11 @@ def makeCommentsVideo(threadID):
         filterEnd = 'concat=n='+str(n)+':v=1:a=1[outv][outa]\" ^'
         compileCode = firstLineBegining + lineEnd + filterBeginning + filterEnd + mapSection
         #print(compileCode)
-        subprocess.call(compileCode, shell=True)
+
+        if folder.name == "Title":
+            os.rename("out1.mp4", "Intro.mp4")
+        else:
+            subprocess.call(compileCode, shell=True)
 
         
         """
@@ -516,7 +532,7 @@ def combineFullComments(threadID):
     filterEnd = 'concat=n='+str(n)+':v=1:a=1[outv][outa]\" ^'
     compileCode = firstLineBegining + lineEnd + filterBeginning + filterEnd + mapSection
     print(compileCode)
-    #subprocess.call(compileCode, shell=True)
+    subprocess.call(compileCode, shell=True)
     #subprocess.call('ffmpeg -i eqzplik\\fullComment.mp4 -i eqzy9tl\\fullComment.mp4 -i er0g23o\\fullComment.mp4 ^ -filter_complex \"[0:v:0][0:a:0][1:v:0][1:a:0][2:v:0][2:a:0]concat=n=3:v=1:a=1[outv][outa]\" ^-map \"[outv]\" -map \"[outa]\" CompleteVideo.mp4', shell=True)
 
     os.chdir(thisFilePath)
@@ -649,17 +665,20 @@ def queueSubreddits(amount):
     
     i = 0
     f = open(allTXT, "r")
-    g = open(existingTXT,"r")
+    #g = open(existingTXT,"r")
+    existingSubs = []
+
+    with open(existingTXT) as g:
+        existingSubs = g.readlines()
     
     while i < amount:
         subID = f.readline()
-        print(subID)
-        while subID in open(existingTXT).read():
+        #print(subID)
+        while subID in existingSubs:
             #print(subID, "exists")
             subID = f.readline()
 
-        subID = reddit.submission(id=subID)
-            
+        subID = reddit.submission(id=subID)    
         hot_python.append(subID)
         i += 1
 
@@ -681,11 +700,11 @@ def finishVideo(threadID):
     endTro = repoPath + "Outtro.mp4"
     os.chdir(path)
     # add music
-    print('ffmpeg -i '+ music +' -i VideoBody.mp4 -filter_complex "[0:a]volume=0.2[a0];[1:a][a0]amerge,pan=stereo|c0<c0+c2|c1<c1+c3[out]" -map 1:v -map "[out]" -c:v copy -shortest BodyWithMusic.mp4')
+    #print('ffmpeg -i '+ music +' -i VideoBody.mp4 -filter_complex "[0:a]volume=0.2[a0];[1:a][a0]amerge,pan=stereo|c0<c0+c2|c1<c1+c3[out]" -map 1:v -map "[out]" -c:v copy -shortest BodyWithMusic.mp4')
     subprocess.call('ffmpeg -i '+ music +' -i VideoBody.mp4 -filter_complex "[0:a]volume=0.2[a0];[1:a][a0]amerge,pan=stereo|c0<c0+c2|c1<c1+c3[out]" -map 1:v -map "[out]" -c:v copy -shortest BodyWithMusic.mp4', shell=True)
     
     # combine with endtro and intro
-    print('ffmpeg -i ' + intro + ' -i BodyWithMusic.mp4 -i ' + endTro + ' ^ -filter_complex \"[0:v:0][0:a:0][1:v:0][1:a:0][2:v:0][2:a:0]concat=n=3:v=1:a=1[outv][outa]\" ^-map \"[outv]\" -map \"[outa]\" CompleteVideo.mp4')
+    #print('ffmpeg -i ' + intro + ' -i BodyWithMusic.mp4 -i ' + endTro + ' ^ -filter_complex \"[0:v:0][0:a:0][1:v:0][1:a:0][2:v:0][2:a:0]concat=n=3:v=1:a=1[outv][outa]\" ^-map \"[outv]\" -map \"[outa]\" CompleteVideo.mp4')
     subprocess.call('ffmpeg -i ' + intro + ' -i BodyWithMusic.mp4 -i ' + endTro + ' ^ -filter_complex \"[0:v:0][0:a:0][1:v:0][1:a:0][2:v:0][2:a:0]concat=n=3:v=1:a=1[outv][outa]\" ^-map \"[outv]\" -map \"[outa]\" CompleteVideo.mp4', shell=True)
 
     
@@ -703,12 +722,13 @@ def main():
         
     threadID = 0
     for key in commentDict.keys():
+        print("Len", len(commentDict))
         driver.get("http://localhost//TalkReddit//Question.html")
         threadID = str(key)
         getThreadOpeningVideo(threadID)
         commentIndex = 0
         driver.get("http://localhost//TalkReddit//Comments.html")
-        print("\n\n\nMaking Comment Folders: ")
+        print("\n\n\nMaking Comment Folders: ", threadID)
         for comment in commentDict[key]:
             authorName = "deleted"
             if hasattr(comment.author, 'name'):
@@ -729,6 +749,7 @@ def main():
             divVis("commentFooter", "hidden")
             clearDiv()
             for commentPiece in comment:
+                commentPiece = "nigger, cunt, fuck, bitch, asshole, dickhead"
                 #print("-", commentPiece)
                 # write to file
                 writeToFile(str(commentIndex), commentPiece, threadID, commentID)
@@ -736,7 +757,11 @@ def main():
                 # if second last piece 
                 if index == commentLen or commentLen == 1:
                     divVis("commentFooter", "visible")
-                    
+
+                # censor curse words
+                for key in curseWords.keys():
+                    commentPiece = commentPiece.replace(key, curseWords[key])
+                
                 # add text
                 if start == True:
                     commentPiece = htmlText + commentPiece
@@ -756,14 +781,20 @@ def main():
 
         subredditsTxt = repoPath + "\\completedSubreddits.txt"
         with open(subredditsTxt,'a+') as g:
-            g.write(str(threadID) + "\n Duration: " + str(math.floor((time.time() - startTime) / 60)) + " minutes \n")
+            g.write(str(threadID) + "\n Duration: " + str(math.floor((time.time() - startTime) / 60)) + " minutes \n\n")
             startTime = time.time()
         g.close()
         
     driver.quit()
 
-    
-#main()
+def testReplacement():
+    string = "What the actual fuck is going on here, cunts, cunt, shit, fucks"
+    for key in curseWords.keys():
+        string = string.replace(key, curseWords[key])
+    print(string)
+
+#testReplacement()
+main()
 #getAudioFiles("80phz7", 15)
 #makeCommentsVideo("99eh6b")
 #combineFullComments("99eh6b")
