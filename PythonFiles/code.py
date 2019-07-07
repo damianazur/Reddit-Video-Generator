@@ -5,6 +5,9 @@ from random import randrange
 from numpy import *
 import win32api, win32con
 from win32con import *
+from win32api import *
+import win32com.client
+import win32gui
 import re
 
 import click
@@ -20,6 +23,9 @@ from pynput.keyboard import Key, Controller
 from moviepy.editor import VideoFileClip
 
 import soundfile as sf
+import pywinauto
+from pywinauto.application import Application
+from pywinauto.keyboard import send_keys
 
 thisFilePath = os.getcwd()
 os.chdir('..')
@@ -71,7 +77,7 @@ curseWords = {"fuck" : "f<span style='color: #303030'>&#9608;</span>ck",
               "shit" : "sh<span style='color: #303030'>&#9608;</span>t",
               "bitch" : "b<span style='color: #303030'>&#9608;</span>tch",
               "dick" : "d<span style='color: #303030'>&#9608;</span>ck",
-              "ass" : "as<span style='color: #303030'>&#9608;</span>",
+              " ass " : " as<span style='color: #303030'>&#9608;</span> ",
               "whore" : "wh<span style='color: #303030'>&#9608;</span>re",
               "slut" : "sl<span style='color: #303030'>&#9608;</span>t",
               "pussy" : "pu<span style='color: #303030'>&#9608;</span>sy"}
@@ -233,7 +239,7 @@ def getComments(commentVideoLength):
                     #if commentCount == 0:
 
                     # if the amount of characters in the comment is less than 1500 (doesn't spill out of the screen)
-                    if len(comment.body) < 1500 and comment.body != "[removed]":
+                    if len(comment.body) < 1500 and comment.body != "[removed]" and comment.body != "[deleted]":
                         currentCharacterCount += len(comment.body)
                         
                         # key exists
@@ -287,7 +293,7 @@ def splitComment(commentBody):
 
     while endIndex < commBodyLen:
         # skip urls
-        if commentBody[endIndex:endIndex + 6] == "https:":
+        if (commentBody[endIndex:endIndex + 6] == "https:" or commentBody[endIndex:endIndex + 5] == "http:") and commentBody[endIndex:endIndex + 5] != "<br>":
             while endIndex < commBodyLen - 1 and commentBody[endIndex] != " ":
                 endIndex += 1
 
@@ -318,21 +324,26 @@ def replaceText(newText):
 
 
 # adds text to the div
+"""
 def appendDivText(newText):
     brEndFound = False
     brStartFound = False
+    #if a new paragraph needs to be made after this comment piece
     if newText[-8:] == "<br><br>":
         brEndFound = True
     
     textDivElement = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "commentBodyDiv")))
     oldText = textDivElement.get_attribute('innerHTML')
 
+    # if the new text should begin on a new paragraph
     if "<br><br>" in newText[:11]:
         brStartFound = True
         oldText = oldText + '<p class=' + '"rz6fp9-10 himKiy"' + 'id=\"commentBodyText">'
-    
+
+    # remove <br><br>
     newText = newText.replace("<br><br>", "")
 
+    # if the end is closed off, open it up, put the comment in and close it back
     if oldText[-4:] == "</p>":
         oldText = oldText[:-4]
     newText = oldText + newText + "</p>"
@@ -341,17 +352,56 @@ def appendDivText(newText):
         newText = newText + '<p class=' + '"rz6fp9-10 himKiy"' + 'id=\"commentBodyText">'
     
     driver.execute_script("arguments[0].innerHTML = arguments[1];", textDivElement, newText)
+"""
 
+def appendDivText(newText):
+    global brNum
+    startIndex = 0
+    endIndex = 0
+
+    ID = "commentBodyText" + str(brNum)
+    textDivElement = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "commentBodyDiv")))
+    print(ID)
+    print(newText + "\n\n")
+    paragraph = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, ID)))
+    oldText = paragraph.get_attribute('innerHTML')
+    
+    while endIndex < len(newText) - 1:
+        if newText[endIndex:endIndex + 8] == "<br><br>":
+            #print("--Double br found--")
+            toAdd = oldText + newText[startIndex:endIndex]
+            print("start:end", startIndex,endIndex)
+            print("adding: ", toAdd)
+            driver.execute_script("arguments[0].innerHTML = arguments[1];", paragraph, toAdd)
+            endIndex += 7
+            startIndex = endIndex + 1
+            
+            brNum += 1
+            ID = "commentBodyText" + str(brNum)
+            paragraphTemplate = '<p class="rz6fp9-10 himKiy" id="'+ID+'"></p>'
+            newInnerDiv = textDivElement.get_attribute('innerHTML') + paragraphTemplate
+            driver.execute_script("arguments[0].innerHTML = arguments[1];", textDivElement, newInnerDiv)
+            paragraph = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, ID)))
+            oldText = ""
+
+        endIndex += 1
+
+    if startIndex != endIndex:
+        toAdd = oldText + newText[startIndex:endIndex + 1]
+        driver.execute_script("arguments[0].innerHTML = arguments[1];", paragraph, toAdd)
 
 def clearText():
     element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "commentBodyText")))
-    newText = ""
+    newText = '<p class="rz6fp9-10 himKiy" id="commentBodyText1"></p>'
     driver.execute_script("arguments[0].textContent = arguments[1];", element, newText)
 
 
 def clearDiv():
     element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "commentBodyDiv")))
-    newText = ""
+    newText = '<p class="rz6fp9-10 himKiy" id="commentBodyText1"></p>'
+    #for i in range (1, 31):
+    #    newText = newText + '<p class="rz6fp9-10 himKiy" id="commentBodyText'+str(i)+'" style="visibility: hidden"></p>'
+        
     driver.execute_script("arguments[0].innerHTML = arguments[1];", element, newText)
 
 
@@ -476,25 +526,6 @@ def makeCommentsVideo(threadID):
             os.rename("out1.mp4", "Intro.mp4")
         else:
             subprocess.call(compileCode, shell=True)
-
-        
-        """
-        audioLength = 0
-        if fullCommentCompiled:
-            clip = VideoFileClip("fullComment.mp4")
-            audioLength = str(clip.audio)
-            clip.close()
-        
-        if fullCommentCompiled and audioLength != "None":
-            subprocess.call('ffmpeg -i fullComment.mp4 -r 30 -y fullComment2.mp4', shell=True)
-            os.remove("fullComment.mp4")
-            if folder.name == "Title":
-                os.rename("fullComment2.mp4", "Intro.mp4")
-            else:
-                os.rename("fullComment2.mp4", "fullComment.mp4")
-        elif fullCommentCompiled:
-            os.remove("fullComment.mp4")
-        """
         
     os.chdir(thisFilePath)
     print("Making video ended")
@@ -710,14 +741,15 @@ def finishVideo(threadID):
     
 # runs at the start
 def main():
+    global brNum
     global startTime
     startDriver()
     global driver
 
     # minutes
-    commentVideoLength = 15
+    commentVideoLength = 1
     
-    queueSubreddits(5)
+    queueSubreddits(1)
     getComments(commentVideoLength)
         
     threadID = 0
@@ -730,17 +762,19 @@ def main():
         driver.get("http://localhost//TalkReddit//Comments.html")
         print("\n\n\nMaking Comment Folders: ", threadID)
         for comment in commentDict[key]:
+            brNum = 1
             authorName = "deleted"
             if hasattr(comment.author, 'name'):
                 authorName = comment.author.name
                 
             fillInCommentDetails(authorName, formatPoints(comment.score), formatTime(time.time() - comment.created_utc))
             start = True
-            htmlText = '<p class=' + '"rz6fp9-10 himKiy"' + 'id=\"commentBodyText">'
+            htmlText = ""
             imageCounter = 1
             commentID = str(comment)
             createDir(threadID, commentID)
             commentBody = comment.body
+            commentBody = "That we're almost at the point where we get artificial organs. I could use a kidney.\n\nEdit: guys, thanks a lot for your support, understanding and most of all the selfless offers you've made, bel it a kidney or info. I love you all.\n\nEdit 2: I wish I could share some Resources on how to be a living donor. If someone could help me in that front so I could share it here. I'm not from the states and I don't know where to start. This is the most humbling experience I've had on reddit yet.\n\nEdit 3: thanks to /u/ragnaruckus for this resource on living donation https://organdonor.gov/about/process/living-donation.html\n\nAnd to /u/tambourine-time for this other resource. Please, if your thinking of donating, have a look at these resources https://www.americantransplantfoundation.org/about-transplant/living-donation/becoming-a-living-donor/"
             comment = splitComment(commentBody)
             
             commentLen = len(comment)
@@ -749,7 +783,6 @@ def main():
             divVis("commentFooter", "hidden")
             clearDiv()
             for commentPiece in comment:
-                commentPiece = "nigger, cunt, fuck, bitch, asshole, dickhead"
                 #print("-", commentPiece)
                 # write to file
                 writeToFile(str(commentIndex), commentPiece, threadID, commentID)
@@ -787,11 +820,33 @@ def main():
         
     driver.quit()
 
-def testReplacement():
-    string = "What the actual fuck is going on here, cunts, cunt, shit, fucks"
-    for key in curseWords.keys():
-        string = string.replace(key, curseWords[key])
-    print(string)
+def accessBal():
+
+    hwndMain = win32gui.FindWindow("Notepad", "Oof - Notepad")
+    hwndChild = win32gui.GetWindow(hwndMain, win32con.GW_CHILD)
+    temp = win32api.PostMessage(hwndChild, win32con.WM_CHAR, 0x44, 0)
+
+    hwndMain = win32gui.FindWindow(None, "Balabolka") 
+    hwndChild = win32gui.GetWindow(hwndMain, win32con.GW_CHILD)
+    #temp = win32api.PostMessage(hwndMain, win32con.WM_CHAR, 0x53, 0)
+    #win32gui.PostMessage(hwndMain,win32con.WM_CLOSE,0,0)
+    win32api.SendMessage()
+
+    """
+    app = Application().connect(process=13628)
+    app.balabolka.TypeKeys("I fucking hate this")
+    app.balabolka.TypeKeys("^s")
+    #time.sleep(1)
+    #app.balabolka.TypeKeys("{ENTER}")
+    #app.balabolka.send_keys('some text{ENTER 2}some more textt{BACKSPACE}', with_spaces=True)
+    #send_keys({ENTER})
+    """
+
+#accessBal()
+
+
+#s1 = r"That we're almost at the point where we get artificial organs. I could use a kidney.\n\nEdit: guys, thanks a lot for your support, understanding and most of all the selfless offers you've made, bel it a kidney or info. I love you all.\n\nEdit 2: I wish I could share some Resources on how to be a living donor. If someone could help me in that front so I could share it here. I'm not from the states and I don't know where to start. This is the most humbling experience I've had on reddit yet.\n\nEdit 3: thanks to /u/ragnaruckus for this resource on living donation https://organdonor.gov/about/process/living-donation.html\n\nAnd to /u/tambourine-time for this other resource. Please, if your thinking of donating, have a look at these resources https://www.americantransplantfoundation.org/about-transplant/living-donation/becoming-a-living-donor/"
+    
 
 #testReplacement()
 main()
