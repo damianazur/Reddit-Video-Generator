@@ -70,7 +70,7 @@ commentDict = {}
 questionDict = {}
 urlEndings = [".com", ".html", ".uk", ".php", ".html", ".org", ".net", ".eu"]
 endCharacters = ['.', ',', '?', '!']
-otherCharacters = ["“", "\""]
+otherCharacters = ["“", "”", "\"", "*"]
 curseWords = {"fuck" : "f<span style='color: #303030'>&#9608;</span>ck",
               "cunt" : "c<span style='color: #303030'>&#9608;</span>nt",
               "nigger" : "ni<span style='color: #303030'>&#9608;</span>er",
@@ -294,8 +294,17 @@ def splitComment(commentBody):
     while endIndex < commBodyLen:
         # skip urls
         if (commentBody[endIndex:endIndex + 6] == "https:" or commentBody[endIndex:endIndex + 5] == "http:") and commentBody[endIndex:endIndex + 5] != "<br>":
-            while endIndex < commBodyLen - 1 and commentBody[endIndex] != " ":
+            while endIndex < commBodyLen - 1 and commentBody[endIndex] != " " and commentBody[endIndex:endIndex + 4] != "<br>":
+                print(commentBody[endIndex:endIndex + 4])
                 endIndex += 1
+
+        #print(commentBody[endIndex -2])
+        if endIndex > 7 and commentBody[endIndex - 8:endIndex] == "<br><br>" and commentBody[endIndex -9] not in endCharacters and commentBody[endIndex-9] not in otherCharacters and not commentBody[endIndex-9].isdigit() and commentBody[sIndex:endIndex] != "":
+            print(commentBody[endIndex -9])
+            print("<br><br>")
+            sentence = commentBody[sIndex:endIndex]
+            sIndex = endIndex
+            sentences.append(sentence)
 
         # slip comment at certain characters e.g. '.', '?' etc
         if commentBody[endIndex] in endCharacters:
@@ -361,8 +370,8 @@ def appendDivText(newText):
 
     ID = "commentBodyText" + str(brNum)
     textDivElement = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "commentBodyDiv")))
-    print(ID)
-    print(newText + "\n\n")
+    #print(ID)
+    #print(newText + "\n\n")
     paragraph = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, ID)))
     oldText = paragraph.get_attribute('innerHTML')
     
@@ -370,8 +379,8 @@ def appendDivText(newText):
         if newText[endIndex:endIndex + 8] == "<br><br>":
             #print("--Double br found--")
             toAdd = oldText + newText[startIndex:endIndex]
-            print("start:end", startIndex,endIndex)
-            print("adding: ", toAdd)
+            #print("start:end", startIndex,endIndex)
+            #print("adding: ", toAdd)
             driver.execute_script("arguments[0].innerHTML = arguments[1];", paragraph, toAdd)
             endIndex += 7
             startIndex = endIndex + 1
@@ -446,6 +455,7 @@ def divVis(divID, status):
 def writeToFile(fileName, s, threadID, commentID):
     with open(repoPath + 'Videos\\' + threadID + "\\" + commentID + "\\" + fileName + '.txt','a+') as g:
         s = s.replace("<br>", "")
+        s = s.replace("*", "")
         s = re.sub(r'[^\x00-\x7F]+','\'', s)
         s = re.sub(r'https?://\S+', 'https link.', s)
         g.write(s + "\n\n\n")
@@ -592,6 +602,8 @@ def formatPoints(points):
         thousands = math.floor(points / 1000)
 
         return str(thousands) + "." + str(remainder) + "k"
+    else:
+        return points + " points"
 
 
 def getAudioFiles(threadID, maxCommentVideoLength):
@@ -774,7 +786,7 @@ def main():
             commentID = str(comment)
             createDir(threadID, commentID)
             commentBody = comment.body
-            commentBody = "That we're almost at the point where we get artificial organs. I could use a kidney.\n\nEdit: guys, thanks a lot for your support, understanding and most of all the selfless offers you've made, bel it a kidney or info. I love you all.\n\nEdit 2: I wish I could share some Resources on how to be a living donor. If someone could help me in that front so I could share it here. I'm not from the states and I don't know where to start. This is the most humbling experience I've had on reddit yet.\n\nEdit 3: thanks to /u/ragnaruckus for this resource on living donation https://organdonor.gov/about/process/living-donation.html\n\nAnd to /u/tambourine-time for this other resource. Please, if your thinking of donating, have a look at these resources https://www.americantransplantfoundation.org/about-transplant/living-donation/becoming-a-living-donor/"
+            commentBody = "That we're almost at the point where we get artificial organs. I could use a kidney\n\nEdit: guys, thanks a lot for your support, understanding and most of all the selfless offers you've made, bel it a kidney or info. I love you all.\n\nEdit 2: I wish I could share some Resources on how to be a living donor. If someone could help me in that front so I could share it here. I'm not from the states and I don't know where to start. This is the most humbling experience I've had on reddit yet.\n\nEdit 3: thanks to /u/ragnaruckus for this resource on living donation https://organdonor.gov/about/process/living-donation.html\n\nAnd to /u/tambourine-time for this other resource. Please, if your thinking of donating, have a look at these resources https://www.americantransplantfoundation.org/about-transplant/living-donation/becoming-a-living-donor/"
             comment = splitComment(commentBody)
             
             commentLen = len(comment)
@@ -807,10 +819,10 @@ def main():
                 index += 1
                 imageCounter += 1
 
-        getAudioFiles(threadID, commentVideoLength)
-        makeCommentsVideo(threadID)
-        combineFullComments(threadID)
-        finishVideo(threadID)
+        #getAudioFiles(threadID, commentVideoLength)
+        #makeCommentsVideo(threadID)
+        #combineFullComments(threadID)
+        #finishVideo(threadID)
 
         subredditsTxt = repoPath + "\\completedSubreddits.txt"
         with open(subredditsTxt,'a+') as g:
