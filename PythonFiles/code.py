@@ -252,8 +252,8 @@ def getComments(commentVideoLength):
 
                         currentCharacterCount += len(comment.body)
                         totalCharLength = len(comment.body) + replyBody
-                        print(totalCharLength)
-                        time.sleep(100)
+                        #print(totalCharLength)
+                        #time.sleep(100)
                         
                         # key exists
                         if comment.parent() in commentDict:
@@ -262,7 +262,7 @@ def getComments(commentVideoLength):
                         else:
                             commentDict[comment.parent()] = [comment]
 
-                        if totalCharLength < 1500 and replyBody != 0 and reply != "":
+                        if totalCharLength < 1400 and replyBody != 0 and reply != "":
                             #print(comment, "has a reply!")
                             commentReplies[str(comment)] = [reply]
                             currentCharacterCount += replyBody
@@ -290,6 +290,10 @@ def startDriver():
 
 
 def captureHTMl(srcNum, threadID, commentID):
+    #height = driver.execute_script("return document.body.scrollHeight")
+    #print(height)
+    #mainDiv = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "2x-container")))
+    #print("height:", mainDiv.size["height"])
     driver.execute_script("document.body.style.zoom='200%'")
     driver.save_screenshot(repoPath + 'Videos\\' + threadID + "\\" + commentID + "\\" + srcNum + ".png")
 
@@ -401,7 +405,7 @@ def appendDivText(newText):
 
     ID = "commentBodyText" + str(brNum) + brNumEnding
     textDivElement = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "commentBodyDiv")))
-    #print(ID)
+    print("Appending:", ID)
     #print(newText + "\n\n")
     #print("ID", ID)
     paragraph = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, ID)))
@@ -418,7 +422,7 @@ def appendDivText(newText):
             startIndex = endIndex + 1
             
             brNum += 1
-            ID = "commentBodyText" + str(brNum)
+            ID = "commentBodyText" + str(brNum) + brNumEnding
             paragraphTemplate = '<p class="rz6fp9-10 himKiy" id="'+ID+'"></p>'
             newInnerDiv = textDivElement.get_attribute('innerHTML') + paragraphTemplate
             driver.execute_script("arguments[0].innerHTML = arguments[1];", textDivElement, newInnerDiv)
@@ -431,10 +435,14 @@ def appendDivText(newText):
         toAdd = oldText + newText[startIndex:endIndex + 1]
         driver.execute_script("arguments[0].innerHTML = arguments[1];", paragraph, toAdd)
 
-def clearText():
-    element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "commentBodyText")))
-    newText = '<p class="rz6fp9-10 himKiy" id="commentBodyText1"></p>'
-    driver.execute_script("arguments[0].textContent = arguments[1];", element, newText)
+
+def clearSpecificDiv():
+    ID = "commentBodyDiv" + brNumEnding
+    paragraphID = "commentBodyText1" + brNumEnding
+    newText = '<p class="rz6fp9-10 himKiy" id="' + paragraphID + '"></p>'
+    element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, ID)))
+    driver.execute_script("arguments[0].innerHTML = arguments[1];", element, newText)
+    print(ID, "cleared")
 
 
 def clearDiv():
@@ -484,6 +492,7 @@ def divVis(divID, status):
     element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, divID)))
     if status == "none":
         driver.execute_script("arguments[0].style.display=\'"+ status + "\'", element);
+        #driver.execute_script("arguments[0].setAttribute('style','display:none;');",element)
     elif status == "visible":
         driver.execute_script("arguments[0].setAttribute('style','visibility:visible;');",element)
         #driver.execute_script("arguments[0].removeAttribute('display')", element);
@@ -822,6 +831,7 @@ def main():
             # Hide the footer and clear the text
             divVis("commentFooter", "none")
             divVis("commentFooterR", "none")
+            divVis("mainDivR", "none")
             clearDiv()
             
             # Gets the amount of replies
@@ -841,8 +851,6 @@ def main():
                     brNumEnding = "R"
                     divVis("mainDivR", "visible")
 
-                # index is used for displaying the footer when the comment is coming to an end
-                index = 1
                 # brNum is used for the paragraph index when writing to the HTML file
                 brNum = 1
                 
@@ -857,10 +865,21 @@ def main():
                 comment = splitComment(commentBody)
                 commentLen = len(comment)
 
-                """
+                height = 0
                 for commentPiece in comment:
-                    appendDivText(commentPiece)  
-                """
+                    appendDivText(commentPiece)
+                    
+                mainDiv = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "2x-container")))
+                height = mainDiv.size["height"]
+                clearSpecificDiv()
+                print("height:", height)
+                if height >= 480:
+                    break
+
+                # index is used for displaying the footer when the comment is coming to an end
+                index = 1
+                # brNum is used for the paragraph index when writing to the HTML file
+                brNum = 1
                 
                 for commentPiece in comment:
                     # write to file
@@ -882,7 +901,7 @@ def main():
                     index += 1
                     imageCounter += 1
 
-            break
+            #break
 
         #getAudioFiles(threadID, commentVideoLength)
         #makeCommentsVideo(threadID)
