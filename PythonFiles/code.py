@@ -67,9 +67,10 @@ hot_python = []
 
 startTime = time.time()
 commentDict = {}
+commentReplies = {}
 questionDict = {}
 urlEndings = [".com", ".html", ".uk", ".php", ".html", ".org", ".net", ".eu"]
-endCharacters = ['.', ',', '?', '!']
+endCharacters = ['.', ',', '?', '!', ')']
 otherCharacters = ["“", "”", "\"", "*"]
 curseWords = {"fuck" : "f<span style='color: #303030'>&#9608;</span>ck",
               "cunt" : "c<span style='color: #303030'>&#9608;</span>nt",
@@ -230,17 +231,29 @@ def getComments(commentVideoLength):
             #print("submission title: ", questionDict[str(submission)]["title"])
 
             # I think limit = 0 means that no comment replies are added
-            submission.comments.replace_more(limit = 0)
+            submission.comments.replace_more(limit = 1)
             commentCount = 0
             # comments in thread
             for comment in submission.comments.list():
                 # comment is the first comment
                 if comment.parent() == submission:
-                    #if commentCount == 0:
+                    reply = ""
+                    replyBody = 0
+                    replies = comment.replies
+                    if len(replies) != 0:
+                        j = 0
+                        while j < len(replies) and (replies[j] == "[removed]" or replies[j] == "[deleted]"):
+                            j += 1
+                        reply = replies[j]
+                        replyBody = len(reply.body)
 
                     # if the amount of characters in the comment is less than 1500 (doesn't spill out of the screen)
                     if len(comment.body) < 1500 and comment.body != "[removed]" and comment.body != "[deleted]":
+
                         currentCharacterCount += len(comment.body)
+                        totalCharLength = len(comment.body) + replyBody
+                        print(totalCharLength)
+                        time.sleep(100)
                         
                         # key exists
                         if comment.parent() in commentDict:
@@ -248,6 +261,11 @@ def getComments(commentVideoLength):
                         # key does not exist
                         else:
                             commentDict[comment.parent()] = [comment]
+
+                        if totalCharLength < 1500 and replyBody != 0 and reply != "":
+                            #print(comment, "has a reply!")
+                            commentReplies[str(comment)] = [reply]
+                            currentCharacterCount += replyBody
 
                         commentCount += 1
                         if currentCharacterCount >= neededCharacterCount:
@@ -272,7 +290,7 @@ def startDriver():
 
 
 def captureHTMl(srcNum, threadID, commentID):
-    driver.execute_script("document.body.style.zoom='150%'")
+    driver.execute_script("document.body.style.zoom='200%'")
     driver.save_screenshot(repoPath + 'Videos\\' + threadID + "\\" + commentID + "\\" + srcNum + ".png")
 
 
@@ -288,20 +306,23 @@ def splitComment(commentBody):
     sIndex = 0
     endIndex = 0
     commentBody = commentBody.replace('\n', '<br>')
+    commentBody = commentBody.replace('<br><br><br><br>', '<br><br>')
     commentBody = commentBody.strip() 
     commBodyLen = len(commentBody)
 
+    #print("commentBody:", commentBody)
+
     while endIndex < commBodyLen:
         # skip urls
-        if (commentBody[endIndex:endIndex + 6] == "https:" or commentBody[endIndex:endIndex + 5] == "http:") and commentBody[endIndex:endIndex + 5] != "<br>":
+        if (commentBody[endIndex:endIndex + 6] == "https:" or commentBody[endIndex:endIndex + 5] == "http:") and commentBody[endIndex:endIndex + 4] != "<br>":
             while endIndex < commBodyLen - 1 and commentBody[endIndex] != " " and commentBody[endIndex:endIndex + 4] != "<br>":
-                print(commentBody[endIndex:endIndex + 4])
+                #print(commentBody[endIndex:endIndex + 4])
                 endIndex += 1
 
         #print(commentBody[endIndex -2])
         if endIndex > 7 and commentBody[endIndex - 8:endIndex] == "<br><br>" and commentBody[endIndex -9] not in endCharacters and commentBody[endIndex-9] not in otherCharacters and not commentBody[endIndex-9].isdigit() and commentBody[sIndex:endIndex] != "":
-            print(commentBody[endIndex -9])
-            print("<br><br>")
+            #print(commentBody[endIndex -9])
+            #print("<br><br>")
             sentence = commentBody[sIndex:endIndex]
             sIndex = endIndex
             sentences.append(sentence)
@@ -311,8 +332,17 @@ def splitComment(commentBody):
             endIndex += 1
             while endIndex < commBodyLen and (commentBody[endIndex] in endCharacters or commentBody[endIndex] in otherCharacters or commentBody[endIndex].isdigit()):
                 endIndex += 1
-
+            
             if not commentBody[endIndex - 1].isdigit():
+                #print("checking for <br> #" + str(commentBody[endIndex:endIndex + 4]) + "#")
+                while endIndex + 5 < commBodyLen - 1 and commentBody[endIndex] == " ":
+                    endIndex += 1
+                    
+                while endIndex + 5 < commBodyLen - 1 and (commentBody[endIndex:endIndex + 4] == "<br>"):
+                    #print("found <br>", commentBody[endIndex - 10: endIndex])
+                    endIndex = endIndex + 4
+
+                #print("Appending:", commentBody[sIndex:endIndex])
                 sentence = commentBody[sIndex:endIndex]
                 sIndex = endIndex
                 sentences.append(sentence)
@@ -365,13 +395,15 @@ def appendDivText(newText):
 
 def appendDivText(newText):
     global brNum
+    global brNumEnding
     startIndex = 0
     endIndex = 0
 
-    ID = "commentBodyText" + str(brNum)
+    ID = "commentBodyText" + str(brNum) + brNumEnding
     textDivElement = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "commentBodyDiv")))
     #print(ID)
     #print(newText + "\n\n")
+    #print("ID", ID)
     paragraph = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, ID)))
     oldText = paragraph.get_attribute('innerHTML')
     
@@ -407,11 +439,12 @@ def clearText():
 
 def clearDiv():
     element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "commentBodyDiv")))
+    element2 = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "commentBodyDivR")))
     newText = '<p class="rz6fp9-10 himKiy" id="commentBodyText1"></p>'
-    #for i in range (1, 31):
-    #    newText = newText + '<p class="rz6fp9-10 himKiy" id="commentBodyText'+str(i)+'" style="visibility: hidden"></p>'
+    newText2 = '<p class="rz6fp9-10 himKiy" id="commentBodyText1R"></p>'
         
     driver.execute_script("arguments[0].innerHTML = arguments[1];", element, newText)
+    driver.execute_script("arguments[0].innerHTML = arguments[1];", element2, newText2)
 
 
 def getThreadOpeningVideo(threadID):
@@ -437,9 +470,9 @@ def getThreadOpeningVideo(threadID):
 
 
 def fillInCommentDetails(username, points, time):
-    usernameBox = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "usernameHere")))
-    pointsBox = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "pointsHere")))
-    timeBox = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "timeHere")))
+    usernameBox = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "usernameHere" + brNumEnding)))
+    pointsBox = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "pointsHere" + brNumEnding)))
+    timeBox = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "timeHere" + brNumEnding)))
 
     driver.execute_script("arguments[0].innerHTML = arguments[1];", usernameBox, username)
     driver.execute_script("arguments[0].innerHTML = arguments[1];", pointsBox, points)
@@ -449,8 +482,11 @@ def fillInCommentDetails(username, points, time):
 # status: hidden/visible
 def divVis(divID, status):
     element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, divID)))
-    driver.execute_script("arguments[0].style.visibility=\'"+ status + "\'", element);
-
+    if status == "none":
+        driver.execute_script("arguments[0].style.display=\'"+ status + "\'", element);
+    elif status == "visible":
+        driver.execute_script("arguments[0].setAttribute('style','visibility:visible;');",element)
+        #driver.execute_script("arguments[0].removeAttribute('display')", element);
 
 def writeToFile(fileName, s, threadID, commentID):
     with open(repoPath + 'Videos\\' + threadID + "\\" + commentID + "\\" + fileName + '.txt','a+') as g:
@@ -603,7 +639,7 @@ def formatPoints(points):
 
         return str(thousands) + "." + str(remainder) + "k"
     else:
-        return points + " points"
+        return str(points) + " points"
 
 
 def getAudioFiles(threadID, maxCommentVideoLength):
@@ -749,17 +785,18 @@ def finishVideo(threadID):
     # combine with endtro and intro
     #print('ffmpeg -i ' + intro + ' -i BodyWithMusic.mp4 -i ' + endTro + ' ^ -filter_complex \"[0:v:0][0:a:0][1:v:0][1:a:0][2:v:0][2:a:0]concat=n=3:v=1:a=1[outv][outa]\" ^-map \"[outv]\" -map \"[outa]\" CompleteVideo.mp4')
     subprocess.call('ffmpeg -i ' + intro + ' -i BodyWithMusic.mp4 -i ' + endTro + ' ^ -filter_complex \"[0:v:0][0:a:0][1:v:0][1:a:0][2:v:0][2:a:0]concat=n=3:v=1:a=1[outv][outa]\" ^-map \"[outv]\" -map \"[outa]\" CompleteVideo.mp4', shell=True)
-
+    
     
 # runs at the start
 def main():
     global brNum
+    global brNumEnding
     global startTime
     startDriver()
     global driver
 
     # minutes
-    commentVideoLength = 1
+    commentVideoLength = 15
     
     queueSubreddits(1)
     getComments(commentVideoLength)
@@ -774,61 +811,91 @@ def main():
         driver.get("http://localhost//TalkReddit//Comments.html")
         print("\n\n\nMaking Comment Folders: ", threadID)
         for comment in commentDict[key]:
-            brNum = 1
-            authorName = "deleted"
-            if hasattr(comment.author, 'name'):
-                authorName = comment.author.name
-                
-            fillInCommentDetails(authorName, formatPoints(comment.score), formatTime(time.time() - comment.created_utc))
-            start = True
-            htmlText = ""
-            imageCounter = 1
             commentID = str(comment)
-            createDir(threadID, commentID)
-            commentBody = comment.body
-            commentBody = "That we're almost at the point where we get artificial organs. I could use a kidney\n\nEdit: guys, thanks a lot for your support, understanding and most of all the selfless offers you've made, bel it a kidney or info. I love you all.\n\nEdit 2: I wish I could share some Resources on how to be a living donor. If someone could help me in that front so I could share it here. I'm not from the states and I don't know where to start. This is the most humbling experience I've had on reddit yet.\n\nEdit 3: thanks to /u/ragnaruckus for this resource on living donation https://organdonor.gov/about/process/living-donation.html\n\nAnd to /u/tambourine-time for this other resource. Please, if your thinking of donating, have a look at these resources https://www.americantransplantfoundation.org/about-transplant/living-donation/becoming-a-living-donor/"
-            comment = splitComment(commentBody)
-            
-            commentLen = len(comment)
-            index = 1
+            # image counter is used for saving as a screenshot
+            imageCounter = 1
+            # commentIndex is used for saving a .txt file for the comment number
             commentIndex += 1
-            divVis("commentFooter", "hidden")
+            # brNumEnding is used for when editing the html for a comment
+            brNumEnding = ""
+            
+            # Hide the footer and clear the text
+            divVis("commentFooter", "none")
+            divVis("commentFooterR", "none")
             clearDiv()
-            for commentPiece in comment:
-                #print("-", commentPiece)
-                # write to file
-                writeToFile(str(commentIndex), commentPiece, threadID, commentID)
-                
-                # if second last piece 
-                if index == commentLen or commentLen == 1:
-                    divVis("commentFooter", "visible")
+            
+            # Gets the amount of replies
+            repliesAmount = 0
+            if commentID in commentReplies.keys():
+                repliesAmount = len(commentReplies[commentID])
+                #print(commentID, "has",  repliesAmount, "replies")
+            else:
+                pass
+                #print("no replies")
 
-                # censor curse words
-                for key in curseWords.keys():
-                    commentPiece = commentPiece.replace(key, curseWords[key])
+            # iterating the main comment and the amount of replies
+            for i in range(0, repliesAmount + 1):
+                # if it is a reply rather than the main comment
+                if i != 0:
+                    comment = commentReplies[commentID][0]
+                    brNumEnding = "R"
+                    divVis("mainDivR", "visible")
+
+                # index is used for displaying the footer when the comment is coming to an end
+                index = 1
+                # brNum is used for the paragraph index when writing to the HTML file
+                brNum = 1
                 
-                # add text
-                if start == True:
-                    commentPiece = htmlText + commentPiece
-                    start = False
-                appendDivText(commentPiece)
-                time.sleep(0.5)
+                authorName = "deleted"
+                if hasattr(comment.author, 'name'):
+                    authorName = comment.author.name
                 
-                # take screenshot and save it
-                captureHTMl(str(imageCounter), threadID, commentID)
-                index += 1
-                imageCounter += 1
+                fillInCommentDetails(authorName, formatPoints(comment.score), formatTime(time.time() - comment.created_utc))
+                createDir(threadID, commentID)
+                commentBody = comment.body
+                #commentBody = "That we're almost at the point where we get artificial organs. I could use a kidney\n\nEdit: guys, thanks a lot for your support, understanding and most of all the selfless offers you've made, bel it a kidney or info. I love you all.\n\nEdit 2: I wish I could share some Resources on how to be a living donor. If someone could help me in that front so I could share it here. I'm not from the states and I don't know where to start. This is the most humbling experience I've had on reddit yet.\n\nEdit 3: thanks to /u/ragnaruckus for this resource on living donation https://organdonor.gov/about/process/living-donation.html\n\nAnd to /u/tambourine-time for this other resource. Please, if your thinking of donating, have a look at these resources https://www.americantransplantfoundation.org/about-transplant/living-donation/becoming-a-living-donor/"
+                comment = splitComment(commentBody)
+                commentLen = len(comment)
+
+                """
+                for commentPiece in comment:
+                    appendDivText(commentPiece)  
+                """
+                
+                for commentPiece in comment:
+                    # write to file
+                    writeToFile(str(commentIndex), commentPiece, threadID, commentID)
+                        
+                    # if second last piece
+                    if index == commentLen or commentLen == 1:
+                        divVis("commentFooter" + brNumEnding, "visible")
+
+                    # censor curse words
+                    for key in curseWords.keys():
+                        commentPiece = commentPiece.replace(key, curseWords[key])
+                        
+                    appendDivText(commentPiece)
+                    time.sleep(0.5)
+                        
+                    # take screenshot and save it
+                    captureHTMl(str(imageCounter), threadID, commentID)
+                    index += 1
+                    imageCounter += 1
+
+            break
 
         #getAudioFiles(threadID, commentVideoLength)
         #makeCommentsVideo(threadID)
         #combineFullComments(threadID)
         #finishVideo(threadID)
 
+        """
         subredditsTxt = repoPath + "\\completedSubreddits.txt"
         with open(subredditsTxt,'a+') as g:
             g.write(str(threadID) + "\n Duration: " + str(math.floor((time.time() - startTime) / 60)) + " minutes \n\n")
             startTime = time.time()
         g.close()
+        """
         
     driver.quit()
 
