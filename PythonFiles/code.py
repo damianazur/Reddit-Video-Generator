@@ -403,30 +403,26 @@ def appendDivText(newText):
     startIndex = 0
     endIndex = 0
 
-    ID = "commentBodyText" + str(brNum) + brNumEnding
-    textDivElement = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "commentBodyDiv")))
-    print("Appending:", ID)
-    #print(newText + "\n\n")
-    #print("ID", ID)
-    paragraph = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, ID)))
+    paragraphID = "commentBodyText" + str(brNum) + brNumEnding
+    divID = "commentBodyDiv" + brNumEnding
+    textDivElement = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, divID)))
+    paragraph = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, paragraphID)))
     oldText = paragraph.get_attribute('innerHTML')
     
     while endIndex < len(newText) - 1:
         if newText[endIndex:endIndex + 8] == "<br><br>":
             #print("--Double br found--")
             toAdd = oldText + newText[startIndex:endIndex]
-            #print("start:end", startIndex,endIndex)
-            #print("adding: ", toAdd)
             driver.execute_script("arguments[0].innerHTML = arguments[1];", paragraph, toAdd)
             endIndex += 7
             startIndex = endIndex + 1
             
             brNum += 1
-            ID = "commentBodyText" + str(brNum) + brNumEnding
-            paragraphTemplate = '<p class="rz6fp9-10 himKiy" id="'+ID+'"></p>'
+            paragraphID = "commentBodyText" + str(brNum) + brNumEnding
+            paragraphTemplate = '<p class="rz6fp9-10 himKiy" id="'+ paragraphID +'"></p>'
             newInnerDiv = textDivElement.get_attribute('innerHTML') + paragraphTemplate
             driver.execute_script("arguments[0].innerHTML = arguments[1];", textDivElement, newInnerDiv)
-            paragraph = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, ID)))
+            paragraph = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, paragraphID)))
             oldText = ""
 
         endIndex += 1
@@ -442,7 +438,7 @@ def clearSpecificDiv():
     newText = '<p class="rz6fp9-10 himKiy" id="' + paragraphID + '"></p>'
     element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, ID)))
     driver.execute_script("arguments[0].innerHTML = arguments[1];", element, newText)
-    print(ID, "cleared")
+    #print(ID, "cleared")
 
 
 def clearDiv():
@@ -872,7 +868,7 @@ def main():
                 mainDiv = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "2x-container")))
                 height = mainDiv.size["height"]
                 clearSpecificDiv()
-                print("height:", height)
+                #print("height:", height)
                 if height >= 480:
                     break
 
@@ -903,10 +899,10 @@ def main():
 
             #break
 
-        #getAudioFiles(threadID, commentVideoLength)
-        #makeCommentsVideo(threadID)
-        #combineFullComments(threadID)
-        #finishVideo(threadID)
+        getAudioFiles(threadID, commentVideoLength)
+        makeCommentsVideo(threadID)
+        combineFullComments(threadID)
+        finishVideo(threadID)
 
         """
         subredditsTxt = repoPath + "\\completedSubreddits.txt"
@@ -950,6 +946,6 @@ def accessBal():
 main()
 #getAudioFiles("80phz7", 15)
 #makeCommentsVideo("99eh6b")
-#combineFullComments("99eh6b")
+#combineFullComments("aumhwo")
 #finishVideo("atn6h6")
 #getTopSubredditPosts()
