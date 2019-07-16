@@ -225,12 +225,12 @@ def getComments(commentVideoLength):
             numComments = formatPoints(submission.num_comments)
             createdTime = formatTime(time.time() - submission.created_utc)
             score = formatPoints(submission.score)
-
             # put question details into a dictionary
             questionDict[str(submission)] = {"title" : submission.title, "author" : authorName, "numComments" : numComments, "createdTime" : createdTime, "score" : score}
             #print("submission title: ", questionDict[str(submission)]["title"])
 
             # I think limit = 0 means that no comment replies are added
+            # and limit = 1 would mean only the first level replies (not replies to those replies)
             submission.comments.replace_more(limit = 1)
             commentCount = 0
             # comments in thread
@@ -249,11 +249,9 @@ def getComments(commentVideoLength):
 
                     # if the amount of characters in the comment is less than 1500 (doesn't spill out of the screen)
                     if len(comment.body) < 1500 and comment.body != "[removed]" and comment.body != "[deleted]":
-
+                        # currentCharacterCount is for the comment and totalCharLength is for that and the replies to it
                         currentCharacterCount += len(comment.body)
                         totalCharLength = len(comment.body) + replyBody
-                        #print(totalCharLength)
-                        #time.sleep(100)
                         
                         # key exists
                         if comment.parent() in commentDict:
@@ -269,7 +267,7 @@ def getComments(commentVideoLength):
 
                         commentCount += 1
                         if currentCharacterCount >= neededCharacterCount:
-                            #print("Character count reach for getting comments")
+                            #print("Character count reach for getting comments, the needed time has been achieved")
                             break
 
 
@@ -290,16 +288,28 @@ def startDriver():
 
 
 def captureHTMl(srcNum, threadID, commentID):
-    #height = driver.execute_script("return document.body.scrollHeight")
-    #print(height)
-    #mainDiv = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "2x-container")))
-    #print("height:", mainDiv.size["height"])
+    """
+    -- Code for printint the height of a div (Doesn't work as intended but might be useful)
+    height = driver.execute_script("return document.body.scrollHeight")
+    print(height)
+    mainDiv = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "2x-container")))
+    print("height:", mainDiv.size["height"])
+    """
     driver.execute_script("document.body.style.zoom='200%'")
     driver.save_screenshot(repoPath + 'Videos\\' + threadID + "\\" + commentID + "\\" + srcNum + ".png")
 
 
 def copyFile():
     shutil.copy2('C://xampp//htdocs//TalkReddit//Comments_Base.html', 'C://xampp//htdocs//TalkReddit//Comments.html')
+
+
+def getSpeakableString(string):
+    string = string.replace("<br>", "")
+    string = string.replace("*", "")
+    string = string.replace("&#x200B;", "")
+    string = re.sub(r'[^\x00-\x7F]+','\'', string)
+    string = string.strip()
+    return string
 
 
 def splitComment(commentBody):
@@ -314,48 +324,56 @@ def splitComment(commentBody):
     commentBody = commentBody.strip() 
     commBodyLen = len(commentBody)
 
-    #print("commentBody:", commentBody)
-
     while endIndex < commBodyLen:
         # skip urls
         if (commentBody[endIndex:endIndex + 6] == "https:" or commentBody[endIndex:endIndex + 5] == "http:") and commentBody[endIndex:endIndex + 4] != "<br>":
             while endIndex < commBodyLen - 1 and commentBody[endIndex] != " " and commentBody[endIndex:endIndex + 4] != "<br>":
-                #print(commentBody[endIndex:endIndex + 4])
                 endIndex += 1
 
-        #print(commentBody[endIndex -2])
+        # If the end of a paragrah has been reached
         if endIndex > 7 and commentBody[endIndex - 8:endIndex] == "<br><br>" and commentBody[endIndex -9] not in endCharacters and commentBody[endIndex-9] not in otherCharacters and not commentBody[endIndex-9].isdigit() and commentBody[sIndex:endIndex] != "":
-            #print(commentBody[endIndex -9])
-            #print("<br><br>")
             sentence = commentBody[sIndex:endIndex]
-            sIndex = endIndex
-            sentences.append(sentence)
+            testSentence = getSpeakableString(sentence)
+            if testSentence != "":
+                sIndex = endIndex
+                #print("$"+sentence+"$")
+                sentences.append(sentence)
 
         # slip comment at certain characters e.g. '.', '?' etc
         if commentBody[endIndex] in endCharacters:
             endIndex += 1
+            # keep searching for the character
             while endIndex < commBodyLen and (commentBody[endIndex] in endCharacters or commentBody[endIndex] in otherCharacters or commentBody[endIndex].isdigit()):
                 endIndex += 1
-            
+
+            # sometimes there is a fullstop before a digit, we do not split the comment at those points
             if not commentBody[endIndex - 1].isdigit():
-                #print("checking for <br> #" + str(commentBody[endIndex:endIndex + 4]) + "#")
+                # ignore whitespaces before a <br>
                 while endIndex + 5 < commBodyLen - 1 and commentBody[endIndex] == " ":
                     endIndex += 1
-                    
+
+                # include all the <br> at the end of the comment piece
                 while endIndex + 5 < commBodyLen - 1 and (commentBody[endIndex:endIndex + 4] == "<br>"):
-                    #print("found <br>", commentBody[endIndex - 10: endIndex])
                     endIndex = endIndex + 4
 
                 #print("Appending:", commentBody[sIndex:endIndex])
                 sentence = commentBody[sIndex:endIndex]
-                sIndex = endIndex
-                sentences.append(sentence)
-
+                # testing is for the audio, some characters are excluded and only a blank line is printed, this is to avoid that
+                testSentence = getSpeakableString(sentence)
+                if testSentence != "":
+                    #print("#"+sentence+"#")
+                    sIndex = endIndex
+                    sentences.append(sentence)
+                    
         endIndex += 1
 
     if sIndex != endIndex and commentBody[sIndex:endIndex] != "":
-        sentence = commentBody[sIndex:endIndex]
-        sentences.append(sentence)
+        # testing is for the audio, some characters are excluded and only a blank line is printed, this is to avoid that
+        testSentence = getSpeakableString(sentence)
+        if testSentence != "":
+            #print("£"+sentence+"£")
+            sentence = commentBody[sIndex:endIndex]
+            sentences.append(sentence)
 
     return sentences
 
@@ -495,10 +513,10 @@ def divVis(divID, status):
 
 def writeToFile(fileName, s, threadID, commentID):
     with open(repoPath + 'Videos\\' + threadID + "\\" + commentID + "\\" + fileName + '.txt','a+') as g:
-        s = s.replace("<br>", "")
-        s = s.replace("*", "")
-        s = re.sub(r'[^\x00-\x7F]+','\'', s)
         s = re.sub(r'https?://\S+', 'https link.', s)
+        s = getSpeakableString(s)
+        if s == "":
+            s = "blank"
         g.write(s + "\n\n\n")
     g.close()
 
@@ -801,7 +819,7 @@ def main():
     global driver
 
     # minutes
-    commentVideoLength = 15
+    commentVideoLength = 12
     
     queueSubreddits(1)
     getComments(commentVideoLength)
@@ -816,6 +834,8 @@ def main():
         driver.get("http://localhost//TalkReddit//Comments.html")
         print("\n\n\nMaking Comment Folders: ", threadID)
         for comment in commentDict[key]:
+            #comment = reddit.comment(id="eiu28ff")
+
             commentID = str(comment)
             # image counter is used for saving as a screenshot
             imageCounter = 1
@@ -904,48 +924,43 @@ def main():
         combineFullComments(threadID)
         finishVideo(threadID)
 
-        """
         subredditsTxt = repoPath + "\\completedSubreddits.txt"
         with open(subredditsTxt,'a+') as g:
             g.write(str(threadID) + "\n Duration: " + str(math.floor((time.time() - startTime) / 60)) + " minutes \n\n")
             startTime = time.time()
         g.close()
-        """
         
     driver.quit()
 
-def accessBal():
 
-    hwndMain = win32gui.FindWindow("Notepad", "Oof - Notepad")
-    hwndChild = win32gui.GetWindow(hwndMain, win32con.GW_CHILD)
-    temp = win32api.PostMessage(hwndChild, win32con.WM_CHAR, 0x44, 0)
-
-    hwndMain = win32gui.FindWindow(None, "Balabolka") 
-    hwndChild = win32gui.GetWindow(hwndMain, win32con.GW_CHILD)
-    #temp = win32api.PostMessage(hwndMain, win32con.WM_CHAR, 0x53, 0)
-    #win32gui.PostMessage(hwndMain,win32con.WM_CLOSE,0,0)
-    win32api.SendMessage()
-
-    """
-    app = Application().connect(process=13628)
-    app.balabolka.TypeKeys("I fucking hate this")
-    app.balabolka.TypeKeys("^s")
-    #time.sleep(1)
-    #app.balabolka.TypeKeys("{ENTER}")
-    #app.balabolka.send_keys('some text{ENTER 2}some more textt{BACKSPACE}', with_spaces=True)
-    #send_keys({ENTER})
-    """
-
-#accessBal()
-
-
-#s1 = r"That we're almost at the point where we get artificial organs. I could use a kidney.\n\nEdit: guys, thanks a lot for your support, understanding and most of all the selfless offers you've made, bel it a kidney or info. I love you all.\n\nEdit 2: I wish I could share some Resources on how to be a living donor. If someone could help me in that front so I could share it here. I'm not from the states and I don't know where to start. This is the most humbling experience I've had on reddit yet.\n\nEdit 3: thanks to /u/ragnaruckus for this resource on living donation https://organdonor.gov/about/process/living-donation.html\n\nAnd to /u/tambourine-time for this other resource. Please, if your thinking of donating, have a look at these resources https://www.americantransplantfoundation.org/about-transplant/living-donation/becoming-a-living-donor/"
+def queueQuestionsIntoFile():
+    global hot_python
+    existingTXT = repoPath + "\\SubReddits.txt"
+    allTXT = repoPath + "\\SubredditsFull.txt"
     
+    i = 0
+    f = open(allTXT, "r")
+    g = open(existingTXT,"a+")
+    existingSubs = []
+    
+    while i < 1100:
+        subID = f.readline()
+        subID.replace("\n", "")
+        if subID != "\n" and subID != "":
+            subID = subID[0:7]
+            g.write(subID + "\n")
 
+        i += 1
+
+    f.close()
+    g.close()
+   
+
+#queueQuestionsIntoFile()
 #testReplacement()
 main()
 #getAudioFiles("80phz7", 15)
 #makeCommentsVideo("99eh6b")
 #combineFullComments("aumhwo")
 #finishVideo("atn6h6")
-#getTopSubredditPosts()
+#getTopSubredditPosts()++
