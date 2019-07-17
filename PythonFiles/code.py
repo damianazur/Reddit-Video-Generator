@@ -369,7 +369,7 @@ def splitComment(commentBody):
 
     if sIndex != endIndex and commentBody[sIndex:endIndex] != "":
         # testing is for the audio, some characters are excluded and only a blank line is printed, this is to avoid that
-        testSentence = getSpeakableString(sentence)
+        testSentence = getSpeakableString(commentBody[sIndex:endIndex])
         if testSentence != "":
             #print("£"+sentence+"£")
             sentence = commentBody[sIndex:endIndex]
