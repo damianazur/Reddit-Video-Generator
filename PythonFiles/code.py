@@ -20,12 +20,12 @@ from selenium.webdriver.support import expected_conditions as EC
 import shutil
 import pyperclip
 from pynput.keyboard import Key, Controller
-from moviepy.editor import VideoFileClip
+#from moviepy.editor import VideoFileClip
 
 import soundfile as sf
-import pywinauto
-from pywinauto.application import Application
-from pywinauto.keyboard import send_keys
+#import pywinauto
+#from pywinauto.application import Application
+#from pywinauto.keyboard import send_keys
 
 thisFilePath = os.getcwd()
 os.chdir('..')
@@ -85,6 +85,7 @@ curseWords = {"fuck" : "f<span style='color: #303030'>&#9608;</span>ck",
               "pussy" : "pu<span style='color: #303030'>&#9608;</span>sy"}
 
 balabolkaFirstTimeSetup = False
+paragraphStyle = 'style="font-size: 20px; LINE-HEIGHT:24px;"'
 
 VK_CODE = {'backspace':0x08,
            'tab':0x09,
@@ -413,7 +414,8 @@ def appendDivText(newText):
             
             sentenceNum += 1
             paragraphID = "commentBodyText" + str(sentenceNum) + divEnding
-            paragraphTemplate = '<p class="rz6fp9-10 himKiy" id="'+ paragraphID +'"></p>'
+            #<p class="rz6fp9-10 himKiy" id="commentBodyText1" style="font-size: 20px; LINE-HEIGHT:24px;">
+            paragraphTemplate = '<p class="rz6fp9-10 himKiy" id="'+ paragraphID +'" '+ paragraphStyle +'></p>'
             newInnerDiv = textDivElement.get_attribute('innerHTML') + paragraphTemplate
             driver.execute_script("arguments[0].innerHTML = arguments[1];", textDivElement, newInnerDiv)
             paragraph = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, paragraphID)))
@@ -429,7 +431,7 @@ def appendDivText(newText):
 def clearSpecificDiv():
     ID = "commentBodyDiv" + divEnding
     paragraphID = "commentBodyText1" + divEnding
-    newText = '<p class="rz6fp9-10 himKiy" id="' + paragraphID + '"></p>'
+    newText = paragraphTemplate = '<p class="rz6fp9-10 himKiy" id="'+ paragraphID +'" '+ paragraphStyle +'></p>'
     element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, ID)))
     driver.execute_script("arguments[0].innerHTML = arguments[1];", element, newText)
     #print(ID, "cleared")
@@ -438,8 +440,8 @@ def clearSpecificDiv():
 def clearDiv():
     element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "commentBodyDiv")))
     element2 = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "commentBodyDivR")))
-    newText = '<p class="rz6fp9-10 himKiy" id="commentBodyText1"></p>'
-    newText2 = '<p class="rz6fp9-10 himKiy" id="commentBodyText1R"></p>'
+    newText = '<p class="rz6fp9-10 himKiy" id="commentBodyText1" '+ paragraphStyle +'></p>'
+    newText2 = '<p class="rz6fp9-10 himKiy" id="commentBodyText1R" '+ paragraphStyle +'></p>'
         
     driver.execute_script("arguments[0].innerHTML = arguments[1];", element, newText)
     driver.execute_script("arguments[0].innerHTML = arguments[1];", element2, newText2)
@@ -869,7 +871,7 @@ def main():
     startDriver()
 
     # minutes
-    commentVideoLength = 1
+    commentVideoLength = 5
     queueSubreddits(1)
     getComments()
        
@@ -935,12 +937,30 @@ def main():
                 height = 0
                 for commentPiece in comment:
                     appendDivText(commentPiece)
-                    
+ 
                 mainDiv = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "2x-container")))
+
                 height = mainDiv.size["height"]
                 clearSpecificDiv()
                 if height >= 480:
                     break
+
+                    """
+                    if divEnding == "R":
+                        divEnding = ""
+                        clearSpecificDiv()
+                        divEnding = "R"
+                        clearSpecificDiv()
+                    elif divEnding == "":
+                        clearSpecificDiv()
+
+                    sentenceNum = 1
+
+                    clearSpecificDiv()
+                    sentenceNum = 1
+                    #print(commentPiece)
+                    appendDivText(commentPiece)
+                    """
 
                 # index is used for displaying the footer when the comment is coming to an end
                 index = 1
@@ -948,6 +968,20 @@ def main():
                 sentenceNum = 1
                 # Iterate over every comment piece
                 for commentPiece in comment:
+                    """
+                    height = mainDiv.size["height"]
+                    if height >= 480:
+                        if divEnding == "R":
+                            divEnding = ""
+                            clearSpecificDiv()
+                            divEnding = "R"
+                            clearSpecificDiv()
+                        elif divEnding == "":
+                            clearSpecificDiv()
+
+                        sentenceNum = 1
+                    """
+                         
                     # write to file
                     writeToFile(str(commentIndex), commentPiece)
                         
@@ -969,11 +1003,13 @@ def main():
 
             #break
 
+        """
         getAudioFiles()
         makeCommentsVideo()
         combineFullComments()
         finishVideo()
         markAsCompleted()
+        """
         
     driver.quit()
 
