@@ -37,6 +37,8 @@ chromeOptions = webdriver.ChromeOptions()
 chromeOptions.add_argument('--headless')
 chromeOptions.add_argument(f'window-size={1920}x{1080}')
 
+localServerFolder = "TR-Local-Server-Files"
+
 """
     - Get comments
     - Put comments into an array and then into a dictionary, key being the parent ID
@@ -288,7 +290,7 @@ def printComments():
 def startDriver():
     global driver
     driver = webdriver.Chrome(executable_path = chromePath, options = chromeOptions)
-    driver.get("http://localhost//TalkReddit//Comments.html")
+    driver.get("http://localhost//"+localServerFolder+"//Comments.html")
 
 
 def captureHTMl(srcNum):
@@ -304,7 +306,7 @@ def captureHTMl(srcNum):
 
 
 def copyFile():
-    shutil.copy2('C://xampp//htdocs//TalkReddit//Comments_Base.html', 'C://xampp//htdocs//TalkReddit//Comments.html')
+    shutil.copy2('C://xampp//htdocs//'+localServerFolder+'//Comments_Base.html', 'C://xampp//htdocs//'+localServerFolder+'//Comments.html')
 
 
 def getSpeakableString(string):
@@ -867,8 +869,8 @@ def main():
     startDriver()
 
     # minutes
-    commentVideoLength = 12
-    queueSubreddits(3)
+    commentVideoLength = 1
+    queueSubreddits(1)
     getComments()
        
     # Iterates over every post
@@ -880,9 +882,9 @@ def main():
         if subName == "AmItheAsshole":
             questionHTMLName = questionHTMLName + "AITA"
             
-        driver.get("http://localhost//TalkReddit//" + questionHTMLName + ".html")
+        driver.get("http://localhost//"+localServerFolder+"//" + questionHTMLName + ".html")
         getThreadOpeningVideo()
-        driver.get("http://localhost//TalkReddit//Comments.html")
+        driver.get("http://localhost//"+localServerFolder+"//Comments.html")
         print("\n\n\nMaking Comment Folders: ", threadID)
 
         # Iterates over every comment in that post
