@@ -428,7 +428,7 @@ def appendDivText(newText):
         driver.execute_script("arguments[0].innerHTML = arguments[1];", paragraph, toAdd)
 
 
-def clearSpecificDiv():
+def clearCurrentDiv():
     ID = "commentBodyDiv" + divEnding
     paragraphID = "commentBodyText1" + divEnding
     newText = paragraphTemplate = '<p class="rz6fp9-10 himKiy" id="'+ paragraphID +'" '+ paragraphStyle +'></p>'
@@ -436,6 +436,12 @@ def clearSpecificDiv():
     driver.execute_script("arguments[0].innerHTML = arguments[1];", element, newText)
     #print(ID, "cleared")
 
+def clearSpecifiedDiv(sDivEnding):
+    ID = "commentBodyDiv" + sDivEnding
+    paragraphID = "commentBodyText1" + sDivEnding
+    newText = paragraphTemplate = '<p class="rz6fp9-10 himKiy" id="'+ paragraphID +'" '+ paragraphStyle +'></p>'
+    element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, ID)))
+    driver.execute_script("arguments[0].innerHTML = arguments[1];", element, newText)
 
 def clearDiv():
     element = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "commentBodyDiv")))
@@ -509,7 +515,9 @@ def getThreadOpeningVideo():
             mainDiv = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "2x-container")))
             height = mainDiv.size["height"]
             if height >= 450:
-                clearSpecificDiv()
+                divVis("postInfo", "none")
+                divVis("postInfo2", "none")
+                clearCurrentDiv()
                 sentenceNum = 1
                 #print(commentPiece)
                 appendDivText(commentPiece)
@@ -542,6 +550,8 @@ def divVis(divID, status):
     elif status == "visible":
         driver.execute_script("arguments[0].setAttribute('style','visibility:visible;');",element)
         #driver.execute_script("arguments[0].removeAttribute('display')", element);
+    elif status == "hidden":
+        driver.execute_script("arguments[0].setAttribute('style','visibility:hidden;');",element)
 
 def writeToFile(fileName, s):
     with open(repoPath + 'Videos\\' + threadID + "\\" + commentID + "\\" + fileName + '.txt','a+') as g:
@@ -857,6 +867,22 @@ def markAsCompleted():
     g.close()
 
 
+def commentVisiblitySetting(visSetting):
+    if visSetting == "firstComment":
+        divVis("threadLineAlign", "visible")
+        divVis("threadLineAlignR", "none")
+        divVis("upDownButtons", "hidden")
+        divVis("otherInfo", "none")
+        
+    elif visSetting == "secondComment":
+        divVis("commentWhole", "none")
+        divVis("threadLineAlign", "none")
+        divVis("threadLineAlignR", "visible")
+        divVis("upDownButtons", "none")
+        divVis("upDownButtonsR", "hidden")
+        divVis("otherInfoR", "none")
+        divVis("commentFooter", "none")
+
 """
 - Iterates over post -> comments in post -> replies to comments -> comment broken up into section
 """    
@@ -886,11 +912,11 @@ def main():
             
         driver.get("http://localhost//"+localServerFolder+"//" + questionHTMLName + ".html")
         getThreadOpeningVideo()
-        driver.get("http://localhost//"+localServerFolder+"//Comments.html")
-        print("\n\n\nMaking Comment Folders: ", threadID)
 
         # Iterates over every comment in that post
         for comment in commentDict[key]:
+            driver.get("http://localhost//"+localServerFolder+"//Comments.html")
+            print("\n\n\nMaking Comment Folders: ", threadID)
             #comment = reddit.comment(id="eiu28ff")
 
             commentID = str(comment)
@@ -930,37 +956,12 @@ def main():
                 fillInCommentDetails(authorName, formatPoints(comment.score), formatTime(time.time() - comment.created_utc))
                 createDir(commentID)
                 commentBody = comment.body
+                #commentBody = "It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. \n\nIt was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum. \n\n Lorem Ipsum is simply dummy text of the printing and typesetting industry. \n\nLorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. \n\nIt was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.Lorem Ipsum is simply dummy text of the printing and typesetting industry. \n\nLorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. \n\nIt has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially"
                 comment = splitComment(commentBody)
                 commentLen = len(comment)
-
+                
                 # checks if the comment fits on the page, break out of this loop if it doesn't (this comment reply/ body gets ignored)
                 height = 0
-                for commentPiece in comment:
-                    appendDivText(commentPiece)
- 
-                mainDiv = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "2x-container")))
-
-                height = mainDiv.size["height"]
-                clearSpecificDiv()
-                if height >= 480:
-                    break
-
-                    """
-                    if divEnding == "R":
-                        divEnding = ""
-                        clearSpecificDiv()
-                        divEnding = "R"
-                        clearSpecificDiv()
-                    elif divEnding == "":
-                        clearSpecificDiv()
-
-                    sentenceNum = 1
-
-                    clearSpecificDiv()
-                    sentenceNum = 1
-                    #print(commentPiece)
-                    appendDivText(commentPiece)
-                    """
 
                 # index is used for displaying the footer when the comment is coming to an end
                 index = 1
@@ -968,19 +969,24 @@ def main():
                 sentenceNum = 1
                 # Iterate over every comment piece
                 for commentPiece in comment:
-                    """
+                    mainDiv = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "2x-container")))
                     height = mainDiv.size["height"]
+                    print("height:", height)
                     if height >= 480:
+                        #print("Comment has reached the screen limit")
+                        commentVisiblitySetting("firstComment")
+                        clearSpecifiedDiv("")
+
                         if divEnding == "R":
-                            divEnding = ""
-                            clearSpecificDiv()
-                            divEnding = "R"
-                            clearSpecificDiv()
-                        elif divEnding == "":
-                            clearSpecificDiv()
+                            #print("Comment type: Reply")
+                            commentVisiblitySetting("secondComment")
+                            clearSpecifiedDiv("R")
+                            
+                        else:
+                            pass
+                            #print("Comment type: First/Main")
 
                         sentenceNum = 1
-                    """
                          
                     # write to file
                     writeToFile(str(commentIndex), commentPiece)
@@ -1003,13 +1009,11 @@ def main():
 
             #break
 
-        """
         getAudioFiles()
         makeCommentsVideo()
         combineFullComments()
         finishVideo()
         markAsCompleted()
-        """
         
     driver.quit()
 
