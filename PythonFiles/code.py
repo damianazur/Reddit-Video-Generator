@@ -27,6 +27,11 @@ import soundfile as sf
 #from pywinauto.application import Application
 #from pywinauto.keyboard import send_keys
 
+import PIL
+from PIL import ImageFont
+from PIL import Image
+from PIL import ImageDraw
+
 thisFilePath = os.getcwd()
 os.chdir('..')
 repoPath = os.getcwd() + "\\" 
@@ -58,7 +63,7 @@ reddit = praw.Reddit(client_id = 'W7V-Goda74pQFA',
                      password = 'notrandom123',
                      user_agent = 'AzureScale1')
 
-subreddit = reddit.subreddit('askreddit')
+subreddit = reddit.subreddit('AmItheAsshole')
 
 submission3 = reddit.submission(url='https://www.reddit.com/r/AskReddit/comments/c01upz/you_can_fill_a_pool_with_anything_you_want_money/')
 submission2 = reddit.submission(url='https://www.reddit.com/r/AskReddit/comments/c193hp/whats_the_most_disturbing_secret_youve_been_told/')
@@ -158,11 +163,12 @@ VK_CODE = {'backspace':0x08,
 # put them in a text file
 def getTopSubredditPosts():
     top_askreddits = subreddit.top(limit = 10000)
-    subredditsTxt = repoPath + "\\Subreddits.txt"
+    subredditsTxt = repoPath + "\\SubredditsAITA.txt"
     with open(subredditsTxt,'a+') as g:
         for sub in top_askreddits:
             title = re.sub(r'[^\x00-\x7F]+','\'', sub.title)
-            g.write(str(sub) + "\t" + title + "\n")           
+            if len(title) < 70:
+                g.write(str(sub) + "\t" + title + "\n")           
     g.close()
 
 
@@ -243,7 +249,11 @@ def getComments():
             # comments in thread
             for comment in submission.comments.list():
                 # comment is the first comment
-                if comment.parent() == submission and comment.author.name != "AutoModerator":
+                authorName = "deleted"
+                if hasattr(comment.author, 'name'):
+                    authorName = comment.author.name
+                    
+                if comment.parent() == submission and authorName != "AutoModerator":
                     reply = ""
                     replyBody = 0
                     replies = comment.replies
@@ -897,8 +907,8 @@ def main():
     startDriver()
 
     # minutes
-    commentVideoLength = 5
-    queueSubreddits(1)
+    commentVideoLength = 10
+    queueSubreddits(5)
     getComments()
        
     # Iterates over every post
@@ -971,7 +981,7 @@ def main():
                 for commentPiece in comment:
                     mainDiv = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "2x-container")))
                     height = mainDiv.size["height"]
-                    print("height:", height)
+                    #print("height:", height)
                     if height >= 480:
                         #print("Comment has reached the screen limit")
                         commentVisiblitySetting("firstComment")
@@ -1041,6 +1051,33 @@ def queueQuestionsIntoFile():
     g.close()
 
 
+def makeThumbnail(index):
+    text = "#"+index
+    x = 930
+    y = 25
+    fillcolor = "#EAD223"
+    shadowcolor = "black"
+    borderThickness = 7
+    imgPath = "E:\\Users\\User1\\Documents\\Git\\VideoMakerRepo\\Images\\ThumbailTemplate2.png"
+    font = ImageFont.truetype("E:\\Users\\User1\\Documents\\Git\\VideoMakerRepo\\Bubblegum.ttf", 180)
+    im = Image.open(imgPath)
+    draw = ImageDraw.Draw(im)
+    
+    # thicker border
+    draw.text((x-borderThickness, y-borderThickness), text, font=font, fill=shadowcolor)
+    draw.text((x+borderThickness, y-borderThickness), text, font=font, fill=shadowcolor)
+    draw.text((x-borderThickness, y+borderThickness), text, font=font, fill=shadowcolor)
+    draw.text((x+borderThickness, y+borderThickness), text, font=font, fill=shadowcolor)
+    draw.text((x, y), text, font=font, fill=fillcolor)
+    
+    fname2 = "E:\\Users\\User1\\Documents\\Git\\VideoMakerRepo\\Images\\Thumbnails\\" + index + ".jpg"
+    im.save(fname2)
+    #os.startfile(fname2)
+
+#for i in range(1, 100):
+#    makeThumbnail(str(i))
+
+#getTopSubredditPosts()
 main()
 #threadID = "cf1lbg"
 #queueQuestionsIntoFile()
