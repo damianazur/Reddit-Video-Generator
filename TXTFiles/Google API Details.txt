@@ -1,0 +1,5 @@
+client ID:
+68092567581-pv2msejciqfdpp3kc0usd8n3d2hr9ipu.apps.googleusercontent.com
+
+client secret:
+wSsnyXzyks8nHch-YtAxDBDY
