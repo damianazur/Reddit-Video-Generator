@@ -9,6 +9,7 @@ from win32api import *
 import win32com.client
 import win32gui
 import re
+from uploadToYoutube import uploadMainFunction
 
 import click
 from selenium import webdriver
@@ -78,6 +79,7 @@ questionDict = {}
 urlEndings = [".com", ".html", ".uk", ".php", ".html", ".org", ".net", ".eu"]
 endCharacters = ['.', ',', '?', '!', ')']
 otherCharacters = ["“", "”", "\"", "*"]
+# common bad word filter
 curseWords = {"fuck" : "f<span style='color: #303030'>&#9608;</span>ck",
               "cunt" : "c<span style='color: #303030'>&#9608;</span>nt",
               "nigger" : "ni<span style='color: #303030'>&#9608;</span>er",
@@ -893,6 +895,36 @@ def commentVisiblitySetting(visSetting):
         divVis("otherInfoR", "none")
         divVis("commentFooter", "none")
 
+
+def queueVideo():
+    txtFile = repoPath + "\\scheduleVideos.txt"
+    with open(txtFile,'a+') as f:
+        f.write(str(threadID) + " " + questionDict[threadID]["title"] + "\n")
+    f.close()
+
+
+def uploadVideo():
+    description = ("Do you think they are the asshole?"
+                    "Comment below!"
+
+                    "ATA - You're The Asshole"
+                    "NTA - Not The Asshole"
+                    "INFO - Not Enough Info"
+                    "ESH - Everyone Sucks Here"
+                    "NAH - No A-holes here")
+
+    tags = "reddit, r/story, #reddit, r/AITA, r/AmITheAsshole, Am I The Asshole?"
+    
+    properties = {"title"           :"",
+                  "description"     :description,
+                  "tags"            :tags,
+                  "privacyStatus"   :"private",
+                  "categoryId"      :"24",
+                  "defaultLanguage" :"",
+                  "videoFilePath"   :"C:\\Users\\User1\\Desktop\\Talk Reddit\\VideoMakerRepo\\Outtro.mp4",
+                  "thumbnail"       :"C:\\Users\\User1\\Desktop\\Talk Reddit\\VideoMakerRepo\\Image Files\\TN.png"
+                 }
+
 """
 - Iterates over post -> comments in post -> replies to comments -> comment broken up into section
 """    
@@ -1074,11 +1106,12 @@ def makeThumbnail(index):
     im.save(fname2)
     #os.startfile(fname2)
 
+
 #for i in range(1, 100):
 #    makeThumbnail(str(i))
 
 #getTopSubredditPosts()
-main()
+#main()
 #threadID = "cf1lbg"
 #queueQuestionsIntoFile()
 #testReplacement()

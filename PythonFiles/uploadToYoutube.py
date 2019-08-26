@@ -17,6 +17,11 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from apiclient.http import MediaFileUpload
 import dateutil.parser as dp
 
+THIS_FILE_PATH = os.getcwd()
+os.chdir('..')
+REPO_PATH = os.getcwd() + "\\" 
+os.chdir(THIS_FILE_PATH)
+
 # The CLIENT_SECRETS_FILE variable 
 # specifies the name of a file that 
 # contains client_id and client_secret. 
@@ -134,40 +139,47 @@ def print_response(response):
 # Build a resource based on a list of properties given as key-value pairs.
 # Leave properties with empty values out of the inserted resource.
 def build_resource(properties):
-  resource = {}
-  for p in properties:
-    # Given a key like "snippet.title", split into "snippet" and "title", where
-    # "snippet" will be an object and "title" will be a property in that object.
-    prop_array = p.split('.')
-    ref = resource
-    for pa in range(0, len(prop_array)):
-      is_array = False
-      key = prop_array[pa]
-      # Convert a name like "snippet.tags[]" to snippet.tags, but handle
-      # the value as an array.
-      if key[-2:] == '[]':
-        key = key[0:len(key)-2:]
-        is_array = True
-      if pa == (len(prop_array) - 1):
-        # Leave properties without values out of inserted resource.
-        if properties[p]:
-          if is_array:
-            ref[key] = properties[p].split(',')
-          else:
-            ref[key] = properties[p]
-      elif key not in ref:
-        # For example, the property is "snippet.title", but the resource does
-        # not yet have a "snippet" object. Create the snippet object here.
-        # Setting "ref = ref[key]" means that in the next time through the
-        # "for pa in range ..." loop, we will be setting a property in the
-        # resource's "snippet" object.
-        ref[key] = {}
-        ref = ref[key]
-      else:
-        # For example, the property is "snippet.description", and the resource
-        # already has a "snippet" object.
-        ref = ref[key]
-  return resource 
+    print("properties", properties)
+
+    resource = {}
+    for p in properties:
+        # Given a key like "snippet.title", split into "snippet" and "title", where
+        # "snippet" will be an object and "title" will be a property in that object.
+        prop_array = p.split('.')
+        ref = resource
+        for pa in range(0, len(prop_array)):
+            is_array = False
+            key = prop_array[pa]
+            # Convert a name like "snippet.tags[]" to snippet.tags, but handle
+            # the value as an array.
+            if key[-2:] == '[]':
+                key = key[0:len(key)-2:]
+                is_array = True
+            if pa == (len(prop_array) - 1):
+                # Leave properties without values out of inserted resource.      
+                if properties[p]:
+                    if is_array:
+                        print("if properties[p]", properties[p].split(','))
+                        ref[key] = properties[p].split(',')
+                    else:
+                        print("else properties[p]", properties[p])
+                        ref[key] = properties[p]
+            elif key not in ref:
+                # For example, the property is "snippet.title", but the resource does
+                # not yet have a "snippet" object. Create the snippet object here.
+                # Setting "ref = ref[key]" means that in the next time through the
+                # "for pa in range ..." loop, we will be setting a property in the
+                # resource's "snippet" object.
+                ref[key] = {}
+                ref = ref[key]
+            else:
+                # For example, the property is "snippet.description", and the resource
+                # already has a "snippet" object.
+                print("else:", ref[key])
+                ref = ref[key]
+
+    print("\n\n", resource)
+    return resource 
 
 
 # Remove keyword arguments that are not set 
@@ -185,7 +197,8 @@ def remove_empty_kwargs(**kwargs):
 def videos_insert(client, properties, media_file, **kwargs):
     print("videos_insert")
     resource = build_resource(properties) 
-    kwargs = remove_empty_kwargs(**kwargs) 
+    kwargs = remove_empty_kwargs(**kwargs)
+    
     request = client.videos().insert(body = resource, 
         media_body = MediaFileUpload(media_file, 
         chunksize =-1, resumable = True), **kwargs) 
@@ -194,7 +207,7 @@ def videos_insert(client, properties, media_file, **kwargs):
 
 
 def queueScheduleTimes():
-    txtFilePath = "C:\\Users\\User1\\Desktop\\Talk Reddit\\VideoMakerRepo\\scheduleQueue.txt"
+    txtFilePath = REPO_PATH + "scheduleQueue.txt"
     increment = 6 #hours
     currentHours = 0
     
@@ -223,7 +236,7 @@ def iso8601ToSec(t):
 
 def getScheduleTime():
     amount = 1
-    with open("C:\\Users\\User1\\Desktop\\Talk Reddit\\VideoMakerRepo\\scheduleQueue.txt", 'r') as fin:
+    with open(REPO_PATH + "scheduleQueue.txt", 'r') as fin:
         data = fin.read().splitlines(True)
 
     i = 0
@@ -236,13 +249,22 @@ def getScheduleTime():
         amount += 1
         i += 1
         isoTime = data[i]
-        time_in_sec = iso8601ToSec[isoTime]
+        time_in_sec = iso8601ToSec(isoTime)
         difference = time_in_sec - time.time()
         
-    with open("C:\\Users\\User1\\Desktop\\Talk Reddit\\VideoMakerRepo\\scheduleQueue.txt", 'w') as fout:
-        fout.writelines(data[amount:])
+    #with open("C:\\Users\\User1\\Desktop\\Talk Reddit\\VideoMakerRepo\\scheduleQueue.txt", 'w') as fout:
+    #    fout.writelines(data[amount:])
+    print(data[i])
+    return str(data[i])
 
-    return data[i]
+
+# Deletes the first line from the file
+def firstLineDel(filePath):
+    with open(filePath, 'r') as fin:
+        data = fin.read().splitlines(True)
+        
+    with open(filePath, 'w') as fout:
+        fout.writelines(data[amount:])
 
 
 def uploadMainFunction(properties):
@@ -253,7 +275,7 @@ def uploadMainFunction(properties):
     categoryId = properties["categoryId"]
     defaultLanguage = properties["defaultLanguage"]
     videoFilePath = properties["videoFilePath"]
-    thumbnail = properties["thumbnail"]
+    thumbnailPath = properties["thumbnailPath"]
     
     # When running locally, disable OAuthlib's 
     # HTTPs verification. When running in production 
@@ -265,39 +287,83 @@ def uploadMainFunction(properties):
         exit('Please specify the complete valid file location.')
 
     scheduleTime = getScheduleTime()
+    scheduleTime = scheduleTime.rstrip()
+    print("Schedule Time:", scheduleTime)
+    print("Title:", title)
+    print("Descripton:", description)
 	
     videos_insert(client, 
 	{'snippet.categoryId': categoryId, 
 	'snippet.defaultLanguage': defaultLanguage, 
-	'snippet.description': description, 
+	'snippet.description': description,
 	'snippet.tags[]': tags, 
 	'snippet.title': title,
-	'status.embeddable': '', 
+	'status.embeddable': '',
 	'status.license': '',
 	'status.privacyStatus': privacyStatus,
-        'status.publishAt': "2019-08-19T18:05:00.000+00:00",
+        'status.publishAt': scheduleTime,
 	'status.publicStatsViewable': ''}, 
 	media_file,
         part = 'snippet, status')
 
+    
+    #with open(REPO_PATH + "scheduleQueue.txt", 'w') as fout:
+    #    fout.writelines(data[amount:])
+        
     time.sleep(10)
-    setThumbnail(LATEST_VIDEO_ID, "C:\\Users\\User1\\Desktop\\Talk Reddit\\VideoMakerRepo\\Image Files\\TN.png", client)
+    setThumbnail(LATEST_VIDEO_ID, thumbnailPath, client)
 
+
+def fileToDictionary(filePath):
+    d = {}
+    f = open(filePath, 'r')
+    for line in f:
+        variables = line.strip().split(";")
+        for var in variables:
+            k, v = var.strip().split(' = ')
+            d[k.strip()] = v.strip()   
+    f.close()
+
+    return d
+    
 
 if __name__ == '__main__':
-    properties = {"title"           :"Video Title Here",
-                  "description"     :"Video Description\n Below",
-                  "tags"            :"tag1, tag2, tag3",
+    # Get variables from file into a dictionary
+    variablesFilePath = REPO_PATH + "Variables.txt"
+    videoUploadVars = fileToDictionary(variablesFilePath)
+    thumbnailIndex = videoUploadVars["thumbnailIndex"]
+
+    queuedVideoVars = fileToDictionary(REPO_PATH + "scheduleVideos.txt")
+    threadID = queuedVideoVars["threadID"]
+    videoTitle = queuedVideoVars["title"]
+
+    description = ("Do you think they are the asshole?\n"
+                    "Comment below!\n"
+
+                    "ATA - You're The Asshole\n"
+                    "NTA - Not The Asshole\n"
+                    "INFO - Not Enough Info\n"
+                    "ESH - Everyone Sucks Here\n"
+                    "NAH - No A-holes here")
+
+    tags = "reddit, r/story, #reddit, r/AITA, r/AmITheAsshole, Am I The Asshole?"
+    print(thumbnailIndex)
+    print(videoTitle)
+    print(threadID)
+        
+    properties = {"title"           :videoTitle,
+                  "description"     :description,
+                  "tags"            :tags,
                   "privacyStatus"   :"private",
                   "categoryId"      :"24",
                   "defaultLanguage" :"",
-                  "videoFilePath"   :"C:\\Users\\User1\\Desktop\\Talk Reddit\\VideoMakerRepo\\Outtro.mp4",
-                  "thumbnail"       :"C:\\Users\\User1\\Desktop\\Talk Reddit\\VideoMakerRepo\\Image Files\\TN.png"
+                  "videoFilePath"   :REPO_PATH + "Videos\\" + threadID + "\\CompleteVideo.mp4",
+                  "thumbnailPath"   :REPO_PATH + "Images\\Thumbnails\\" + thumbnailIndex + ".jpg"
                  }
     
-    #uploadMainFunction(properties)
+    uploadMainFunction(properties)
     #print(datetime.datetime.now())
     #print(datetime.datetime.now().isoformat())
     #queueScheduleTimes()
     #iso8601ToSec("2019-08-19T18:05:00.000+00:00")
-    print(getScheduleTime())
+    #print(getScheduleTime())
