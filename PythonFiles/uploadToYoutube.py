@@ -25,7 +25,7 @@ os.chdir(THIS_FILE_PATH)
 # The CLIENT_SECRETS_FILE variable 
 # specifies the name of a file that 
 # contains client_id and client_secret. 
-CLIENT_SECRETS_FILE = "C:\\Users\\User1\\Desktop\\Talk Reddit\\VideoMakerRepo\\JSON Files\\client1.json"
+CLIENT_SECRETS_FILE = REPO_PATH + "JSON Files\\client1.json"
 
 # This scope allows for full read / 
 # write access to the authenticated 
@@ -229,7 +229,7 @@ def iso8601ToSec(t):
     #t = '2019-08-19T01:00:00.000+00:00'
     parsed_t = dp.parse(t)
     t_in_seconds = parsed_t.timestamp()
-    print(t_in_seconds, time.time(), "difference:", time.time() - t_in_seconds)
+    #print(t_in_seconds, time.time(), "difference:", time.time() - t_in_seconds)
     
     return t_in_seconds
 
@@ -254,28 +254,20 @@ def getScheduleTime():
         
     #with open("C:\\Users\\User1\\Desktop\\Talk Reddit\\VideoMakerRepo\\scheduleQueue.txt", 'w') as fout:
     #    fout.writelines(data[amount:])
-    #print(data[i])
+    print(i, data[i])
     return str(data[i])
 
 
 def removeScheduleTime(timeToRemove):
+    #print("Removing:", timeToRemove)
     with open(REPO_PATH + "scheduleQueue.txt", 'r') as fin:
         data = fin.read().splitlines(True)
 
-    i = 0
+    index = data.index(timeToRemove)
     arraySize = len(data)
-    for time in data:
-        if time == timeToRemove:
-            break
-        i += 1
-
-    print("Remove up to and on line", i)
-    print("To remove", timeToRemove)
-    print("Removing", data[i])
-    with open("C:\\Users\\User1\\Desktop\\Talk Reddit\\VideoMakerRepo\\scheduleQueue.txt", 'w') as fout:
-        fout.writelines(data[i:])
-
-    
+    #print("Index = ", index)
+    with open(REPO_PATH + "scheduleQueue.txt", 'w') as fout:
+        fout.writelines(data[index + 1:])
 
 
 # Deletes the first line from the file
@@ -284,7 +276,7 @@ def firstLineDel(filePath):
         data = fin.read().splitlines(True)
         
     with open(filePath, 'w') as fout:
-        fout.writelines(data[amount:])
+        fout.writelines(data[1:])
 
 
 def uploadMainFunction(properties):
@@ -297,6 +289,8 @@ def uploadMainFunction(properties):
     videoFilePath = properties["videoFilePath"]
     thumbnailPath = properties["thumbnailPath"]
     videoUploadVars = properties["videoUploadVars"]
+
+    title = "[#" + str(videoUploadVars["thumbnailIndex"]) + "] " + title
     
     # When running locally, disable OAuthlib's 
     # HTTPs verification. When running in production 
@@ -308,7 +302,7 @@ def uploadMainFunction(properties):
         exit('Please specify the complete valid file location.')
 
     scheduleTime = getScheduleTime()
-    scheduleTime = scheduleTime.rstrip()
+    cleanedScheduleTime = scheduleTime.rstrip()
     print("Schedule Time:", scheduleTime)
     print("Title:", title)
     print("Descripton:", description)
@@ -322,29 +316,40 @@ def uploadMainFunction(properties):
 	'status.embeddable': '',
 	'status.license': '',
 	'status.privacyStatus': privacyStatus,
-        'status.publishAt': scheduleTime,
+        'status.publishAt': cleanedScheduleTime,
 	'status.publicStatsViewable': ''}, 
 	media_file,
         part = 'snippet, status')
 
-    removeScheduleTime(scheduleTime)
     videoUploadVars["thumbnailIndex"] = str(int(videoUploadVars["thumbnailIndex"]) + 1)
     dictToFile(variablesFilePath, videoUploadVars)
+    firstLineDel(REPO_PATH + "scheduleVideos.txt")
         
     time.sleep(10)
     setThumbnail(LATEST_VIDEO_ID, thumbnailPath, client)
+    removeScheduleTime(scheduleTime)
 
 
-def fileToDictionary(filePath):
+def fileToDictionary(filePath, keyType):
     d = {}
+    index = 0
     f = open(filePath, 'r')
     for line in f:
+        lineDict = {}
         variables = line.strip().split(";")
         for var in variables:
             k, v = var.strip().split(' = ')
-            d[k.strip()] = v.strip()   
-    f.close()
 
+            if keyType == "byLineNumber":
+                lineDict[k.strip()] = v.strip()
+            else:
+                d[k.strip()] = v.strip()
+
+        if keyType == "byLineNumber":
+            d[index] = lineDict
+            index += 1
+
+    f.close()
     return d
 
 def dictToFile(filePath, dictionary):
@@ -354,22 +359,21 @@ def dictToFile(filePath, dictionary):
         f.write(lineToWrite)
         
     f.close()
-    
+
 
 if __name__ == '__main__':
     # Get variables from file into a dictionary
     variablesFilePath = REPO_PATH + "Variables.txt"
-    videoUploadVars = fileToDictionary(variablesFilePath)
-    
+    videoUploadVars = fileToDictionary(variablesFilePath, "")
     thumbnailIndex = videoUploadVars["thumbnailIndex"]
 
-    queuedVideoVars = fileToDictionary(REPO_PATH + "scheduleVideos.txt")
-    
-    threadID = queuedVideoVars["threadID"]
-    videoTitle = queuedVideoVars["title"]
+    queuedVideoVars = fileToDictionary(REPO_PATH + "scheduleVideos.txt", "byLineNumber")
+        
+    threadID = queuedVideoVars[0]["threadID"]
+    videoTitle = queuedVideoVars[0]["title"]
 
     description = ("Do you think they are the asshole?\n"
-                    "Comment below!\n"
+                    "Comment below!\n\n"
 
                     "ATA - You're The Asshole\n"
                     "NTA - Not The Asshole\n"
@@ -392,10 +396,11 @@ if __name__ == '__main__':
                   "thumbnailPath"   :REPO_PATH + "Images\\Thumbnails\\" + thumbnailIndex + ".jpg",
                   "videoUploadVars" :videoUploadVars
                  }
-    
-    #uploadMainFunction(properties)
+
+    uploadMainFunction(properties)
     #print(datetime.datetime.now())
     #print(datetime.datetime.now().isoformat())
     #queueScheduleTimes()
     #iso8601ToSec("2019-08-19T18:05:00.000+00:00")
     #print(getScheduleTime())
+

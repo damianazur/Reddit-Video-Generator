@@ -1107,6 +1107,25 @@ def makeThumbnail(index):
     #os.startfile(fname2)
 
 
+def addVideosToScheduleQueue():
+    global hot_python
+    scheduleTXT = repoPath + "scheduleVideos.txt"
+    
+    f = open(scheduleTXT,"a+")
+
+    i = 0
+    for folder in os.scandir("E:\\Users\\User1\\Documents\\Git\\VideoMakerRepo\\Videos\\QueueAITA"):
+        for file in os.scandir(folder):
+            if file.name == "CompleteVideo.mp4":
+                subID = reddit.submission(id=folder.name)
+                toWrite = "threadID = "+ folder.name +"; title = "+ subID.title +"\n"
+                f.write(toWrite)
+                print(i, folder.name, subID.title)
+                i += 1
+    
+    f.close()
+
+addVideosToScheduleQueue()
 #for i in range(1, 100):
 #    makeThumbnail(str(i))
 
