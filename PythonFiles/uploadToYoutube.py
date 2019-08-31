@@ -241,10 +241,10 @@ def getScheduleTime():
 
     i = 0
     isoTime = data[i]
-    print(isoTime)
+    #print(isoTime)
     time_in_sec = iso8601ToSec(isoTime)
     difference = time_in_sec - time.time()
-    print(difference)
+    #print(difference)
     while difference < 600:
         amount += 1
         i += 1
@@ -254,8 +254,28 @@ def getScheduleTime():
         
     #with open("C:\\Users\\User1\\Desktop\\Talk Reddit\\VideoMakerRepo\\scheduleQueue.txt", 'w') as fout:
     #    fout.writelines(data[amount:])
-    print(data[i])
+    #print(data[i])
     return str(data[i])
+
+
+def removeScheduleTime(timeToRemove):
+    with open(REPO_PATH + "scheduleQueue.txt", 'r') as fin:
+        data = fin.read().splitlines(True)
+
+    i = 0
+    arraySize = len(data)
+    for time in data:
+        if time == timeToRemove:
+            break
+        i += 1
+
+    print("Remove up to and on line", i)
+    print("To remove", timeToRemove)
+    print("Removing", data[i])
+    with open("C:\\Users\\User1\\Desktop\\Talk Reddit\\VideoMakerRepo\\scheduleQueue.txt", 'w') as fout:
+        fout.writelines(data[i:])
+
+    
 
 
 # Deletes the first line from the file
@@ -276,6 +296,7 @@ def uploadMainFunction(properties):
     defaultLanguage = properties["defaultLanguage"]
     videoFilePath = properties["videoFilePath"]
     thumbnailPath = properties["thumbnailPath"]
+    videoUploadVars = properties["videoUploadVars"]
     
     # When running locally, disable OAuthlib's 
     # HTTPs verification. When running in production 
@@ -306,9 +327,9 @@ def uploadMainFunction(properties):
 	media_file,
         part = 'snippet, status')
 
-    
-    #with open(REPO_PATH + "scheduleQueue.txt", 'w') as fout:
-    #    fout.writelines(data[amount:])
+    removeScheduleTime(scheduleTime)
+    videoUploadVars["thumbnailIndex"] = str(int(videoUploadVars["thumbnailIndex"]) + 1)
+    dictToFile(variablesFilePath, videoUploadVars)
         
     time.sleep(10)
     setThumbnail(LATEST_VIDEO_ID, thumbnailPath, client)
@@ -325,15 +346,25 @@ def fileToDictionary(filePath):
     f.close()
 
     return d
+
+def dictToFile(filePath, dictionary):
+    f = open(filePath, 'w')
+    for key in dictionary.keys():
+        lineToWrite = key + " = " + str(dictionary[key]) + "\n"
+        f.write(lineToWrite)
+        
+    f.close()
     
 
 if __name__ == '__main__':
     # Get variables from file into a dictionary
     variablesFilePath = REPO_PATH + "Variables.txt"
     videoUploadVars = fileToDictionary(variablesFilePath)
+    
     thumbnailIndex = videoUploadVars["thumbnailIndex"]
 
     queuedVideoVars = fileToDictionary(REPO_PATH + "scheduleVideos.txt")
+    
     threadID = queuedVideoVars["threadID"]
     videoTitle = queuedVideoVars["title"]
 
@@ -358,10 +389,11 @@ if __name__ == '__main__':
                   "categoryId"      :"24",
                   "defaultLanguage" :"",
                   "videoFilePath"   :REPO_PATH + "Videos\\" + threadID + "\\CompleteVideo.mp4",
-                  "thumbnailPath"   :REPO_PATH + "Images\\Thumbnails\\" + thumbnailIndex + ".jpg"
+                  "thumbnailPath"   :REPO_PATH + "Images\\Thumbnails\\" + thumbnailIndex + ".jpg",
+                  "videoUploadVars" :videoUploadVars
                  }
     
-    uploadMainFunction(properties)
+    #uploadMainFunction(properties)
     #print(datetime.datetime.now())
     #print(datetime.datetime.now().isoformat())
     #queueScheduleTimes()
