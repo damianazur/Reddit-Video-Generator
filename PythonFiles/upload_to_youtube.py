@@ -338,28 +338,35 @@ def uploadMainFunction(properties):
     print("Schedule Time:", scheduleTime)
     print("Title:", title)
     print("Descripton:", description)
-	
-    videos_insert(client, 
-	{'snippet.categoryId': categoryId, 
-	'snippet.defaultLanguage': defaultLanguage, 
-	'snippet.description': description,
-	'snippet.tags[]': tags, 
-	'snippet.title': title,
-	'status.embeddable': '',
-	'status.license': '',
-	'status.privacyStatus': privacyStatus,
-        'status.publishAt': cleanedScheduleTime,
-	'status.publicStatsViewable': ''}, 
-	media_file,
-        part = 'snippet, status')
 
-    videoUploadVars["thumbnailIndex"] = str(int(videoUploadVars["thumbnailIndex"]) + 1)
-    dictToFile(variablesFilePath, videoUploadVars)
-    firstLineDel(REPO_PATH + "TXTFiles\\ScheduleVideosQueue.txt")
+    exceptionOccured = False
+    try: 
+        videos_insert(client, 
+            {'snippet.categoryId': categoryId, 
+            'snippet.defaultLanguage': defaultLanguage, 
+            'snippet.description': description,
+            'snippet.tags[]': tags, 
+            'snippet.title': title,
+            'status.embeddable': '',
+            'status.license': '',
+            'status.privacyStatus': privacyStatus,
+            'status.publishAt': cleanedScheduleTime,
+            'status.publicStatsViewable': ''}, 
+            media_file,
+            part = 'snippet, status')
+    except Exception as e:
+        exceptionOccured = True
+        print(e)
+
+    if exceptionOccured == False:
+        videoUploadVars["thumbnailIndex"] = str(int(videoUploadVars["thumbnailIndex"]) + 1)
+        dictToFile(variablesFilePath, videoUploadVars)
+        firstLineDel(REPO_PATH + "TXTFiles\\ScheduleVideosQueue.txt")
+            
+        time.sleep(10)
         
-    time.sleep(10)
-    setThumbnail(LATEST_VIDEO_ID, thumbnailPath, client)
-    removeScheduleTime(scheduleTime)
+        setThumbnail(LATEST_VIDEO_ID, thumbnailPath, client)
+        removeScheduleTime(scheduleTime)
 
 
 def dictToFile(filePath, dictionary):

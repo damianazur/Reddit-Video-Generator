@@ -600,11 +600,11 @@ def makeCommentsVideo():
 
     for folder in os.scandir(threadPath):
         n = 1
-        firstLineBegining = 'ffmpeg -i '+ repoPath + 'Sound Files\\StaticTransition.mp4'
+        firstLineBegining = 'ffmpeg -i '+ repoPath + 'SoundFiles\\StaticTransition.mp4'
         lineEnd = ' ^ '
         filterBeginning = '-filter_complex \"[0:v][0:a]'
         mapSection = '-map [outv] -map [outa] fullComment.mp4'
-        transitionPath = " -i " + repoPath + "Sound Files\\StaticTransition.mp4"
+        transitionPath = " -i " + repoPath + "SoundFiles\\StaticTransition.mp4"
         
         firstLine = True
         #transitionPath = repoPath + "StaticTransition.mp4"
@@ -646,12 +646,11 @@ def makeCommentsVideo():
         filterEnd = 'concat=n='+str(n)+':v=1:a=1[outv][outa]\" ^'
         compileCode = firstLineBegining + lineEnd + filterBeginning + filterEnd + mapSection
         #print(compileCode)
-
         if folder.name == "Title":
             if subName == "AmITheAsshole":
                 subprocess.call(compileCode, shell=True)
                 os.rename("fullComment.mp4", "noMusicIntro.mp4")
-                music = repoPath + "Sound Files\\IntroMusic.mp3"
+                music = repoPath + "SoundFiles\\IntroMusic.mp3"
                 subprocess.call('ffmpeg -i '+ music +' -i noMusicIntro.mp4 -filter_complex "[0:a]volume=0.2[a0];[1:a][a0]amerge,pan=stereo|c0<c0+c2|c1<c1+c3[out]" -map 1:v -map "[out]" -c:v copy -shortest Intro.mp4', shell=True)
             else:
                 os.rename("out1.mp4", "Intro.mp4")           
@@ -672,7 +671,7 @@ def combineFullComments():
     lineEnd = ' ^ '
     filterBeginning = '-filter_complex \"'
     mapSection = '-map [outv] -map [outa] VideoBody.mp4'
-    transitionPath = " -i "+repoPath+"Sound Files\\StaticTransition.mp4"
+    transitionPath = " -i "+repoPath+"SoundFiles\\StaticTransition.mp4"
 
     broken = False
     for folder in os.scandir(threadPath):
@@ -858,9 +857,9 @@ def queueCombineFullVideo():
 def finishVideo():
     print("Finishing Video: ", threadID)
     path = repoPath + 'Videos\\' + threadID
-    music = repoPath + "Sound Files\\SelectedSoundtrack.mp3"
+    music = repoPath + "SoundFiles\\SelectedSoundtrack.mp3"
     intro = path + "\\Title\\Intro.mp4"
-    endTro = repoPath + "Sound Files\\Outtro.mp4"
+    endTro = repoPath + "SoundFiles\\Outtro.mp4"
     os.chdir(path)
     # add music
     #print('ffmpeg -i '+ music +' -i VideoBody.mp4 -filter_complex "[0:a]volume=0.2[a0];[1:a][a0]amerge,pan=stereo|c0<c0+c2|c1<c1+c3[out]" -map 1:v -map "[out]" -c:v copy -shortest BodyWithMusic.mp4')
