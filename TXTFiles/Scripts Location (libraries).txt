@@ -1,0 +1,2 @@
+C:\Users\User1\AppData\Local\Programs\Python\Python37\Scripts\
+C:\Users\New User\AppData\Local\Programs\Python\Python37\Scripts
