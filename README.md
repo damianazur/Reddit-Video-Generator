@@ -6,8 +6,8 @@ Example: https://youtu.be/SE9KLY-UQck
 
 ## How it works
 
-**Video Creation:**
-<img src="https://i.imgur.com/sK7YuHS.png">
+**Video Creation:** <br><br>
+<img src="https://i.imgur.com/HdBeWzD.png">
 - Program asks for you to enter arguments such as the length of the video, how many video's to create and what kind of video's to create.
 - Program will obtain the topic's question and comments using a Reddit API (PRAW) and store it in a dictionary.
 - The questiona and comment text is split into sections (these will appear on screen as soon as they are read out)
@@ -16,16 +16,16 @@ Example: https://youtu.be/SE9KLY-UQck
 - The images and audio are combined to make a video using FFMPEG
 - Video sections are combined, then music, intro and outtro are added
 
-**Video Uploading:**
+<br>**Video Uploading:**
 - Uploads using the Google Youtube API
 - User is given a link and a prompt, following the link they will have to login to their youtube account and a code will be given to them. The program will be able to upload videos after the code is entered. <br><br> <img src="https://imgur.com/f3yDxTu.png">
 - Video's are scheduled to be uploaded every 6 hours
 
-**Other Features:**
+<br>**Other Features:**
 - The program automatically creates thumbanils for the youtube videos
 - The program automatically queues video's for uploading, keeps tracks of which videos have been created, uploaded, when the next video should be uploaded and what the next thumbnail for the video is.
 
-### Prerequisites
+## Prerequisites
 What things you need to install the software and how to install them
 
 1. Python Libraries <br>
