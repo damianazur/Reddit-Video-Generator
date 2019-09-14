@@ -1,13 +1,29 @@
 # Reddit Video Maker
 
-Automatically creates a narrated video of a Reddit topic, the question and replies to it are read out.<br>
+A program coded in Python that automatically creates a narrated video of a Reddit topic/question, the question and replies to it are read out.<br>
 It is like browsing Reddit but made into a video that can then be automatically uploaded to youtube.<br>
-The program takes screenshots of the website in the background using headless chrome and using Balabolka <br>
-gets the audio files which are combined into a video using FFMPEG. 
+Example: https://youtu.be/SE9KLY-UQck 
 
-## Getting Started
+## How it works
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
+**Video Creation:**
+<img src="https://i.imgur.com/sK7YuHS.png">
+- Program asks for you to enter arguments such as the length of the video, how many video's to create and what kind of video's to create.
+- Program will obtain the topic's question and comments using a Reddit API (PRAW) and store it in a dictionary.
+- The questiona and comment text is split into sections (these will appear on screen as soon as they are read out)
+- On a local webserver each text section will be added in and a screenshot will be taken. These images will be the frames for the video.
+- The text sections will also be saved to a text file which will then be using to obtain the audio files for the video using a 3rd party software Balabolka. 
+- The images and audio are combined to make a video using FFMPEG
+- Video sections are combined, then music, intro and outtro are added
+
+**Video Uploading:**
+- Uploads using the Google Youtube API
+- User is given a link and a prompt, following the link they will have to login to their youtube account and a code will be given to them. The program will be able to upload videos after the code is entered. <br><br> <img src="https://imgur.com/f3yDxTu.png">
+- Video's are scheduled to be uploaded every 6 hours
+
+**Other Features:**
+- The program automatically creates thumbanils for the youtube videos
+- The program automatically queues video's for uploading, keeps tracks of which videos have been created, uploaded, when the next video should be uploaded and what the next thumbnail for the video is.
 
 ### Prerequisites
 What things you need to install the software and how to install them
