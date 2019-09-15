@@ -75,7 +75,6 @@ otherCharacters = ["“", "”", "\"", "*"]
 # common bad word filter
 curseWords = {"fuck" : "f<span style='color: #303030'>&#9608;</span>ck",
               "cunt" : "c<span style='color: #303030'>&#9608;</span>nt",
-              "nigger" : "ni<span style='color: #303030'>&#9608;</span>er",
               "shit" : "sh<span style='color: #303030'>&#9608;</span>t",
               "bitch" : "b<span style='color: #303030'>&#9608;</span>tch",
               "dick" : "d<span style='color: #303030'>&#9608;</span>ck",
@@ -225,14 +224,14 @@ def getComments():
     for submission in hot_python:
         currentCharacterCount = 0
         if not submission.stickied:
-            print(submission)
-            print(submission.title, "\n")
+            print("\n Title: " + str(submission))
+            print(submission.title)
             #print(dir(submission))
             #print(submission.selftext)
             global subName
             subName = submission.subreddit
-            print("Name:", subName)
-            print("Obtaining comments")
+            print("Subreddit name:", subName)
+            print("Obtaining question and comments using the Reddit API")
 
             authorName = "deleted"
             if hasattr(submission.author, 'name'):
@@ -468,7 +467,7 @@ def clearDiv():
 
 def getThreadOpeningVideo():
     global questionDict
-    print("Creating question pictures")
+    print("\nCreating a folder for the question, splitting question into pieces and creating a sequence of images")
     createDir("Title")
     
     usernameBox = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "usernameHere")))
@@ -584,7 +583,8 @@ def createDir(CommentID):
 
     path = path + "//" + CommentID
     if not os.path.isdir(path):
-        print(CommentID)
+        if CommentID != "Title":
+            print(CommentID)
         os.mkdir(path)
 
 
@@ -595,7 +595,7 @@ def deleteThread():
 
 
 def makeCommentsVideo():
-    print("Making comments video: ", threadID)
+    print("\nMaking a video for each comment: ", threadID)
     path = threadPath = repoPath + 'Videos\\' + threadID
 
     for folder in os.scandir(threadPath):
@@ -611,7 +611,7 @@ def makeCommentsVideo():
         folderDir = threadPath + "\\" + folder.name
         os.chdir(folderDir)
         fileIndex = 1
-        print("Accessing:", folder.name)
+        print("Comment ID: ", folder.name)
         with open(folderDir + "\\pieceList.txt",'a+') as g:
             for file in os.scandir(folderDir):      
                 if str(file.name).endswith('.png'):
@@ -645,10 +645,12 @@ def makeCommentsVideo():
                         
         filterEnd = 'concat=n='+str(n)+':v=1:a=1[outv][outa]\" ^'
         compileCode = firstLineBegining + lineEnd + filterBeginning + filterEnd + mapSection
-        #print(compileCode)
+
         if folder.name == "Title":
             if subName == "AmITheAsshole":
+                print("\n\n" + compileCode)
                 subprocess.call(compileCode, shell=True)
+
                 os.rename("fullComment.mp4", "noMusicIntro.mp4")
                 music = repoPath + "SoundFiles\\IntroMusic.mp3"
                 subprocess.call('ffmpeg -i '+ music +' -i noMusicIntro.mp4 -filter_complex "[0:a]volume=0.2[a0];[1:a][a0]amerge,pan=stereo|c0<c0+c2|c1<c1+c3[out]" -map 1:v -map "[out]" -c:v copy -shortest Intro.mp4', shell=True)
@@ -658,11 +660,11 @@ def makeCommentsVideo():
             subprocess.call(compileCode, shell=True)
         
     os.chdir(thisFilePath)
-    print("Making video ended")
+    print("-Finished making a video for each comment-")
 
 
 def combineFullComments():
-    print("Combining full comments: ", threadID)
+    print("\nCombining comments into video body: ", threadID)
     path = threadPath = repoPath + 'Videos\\' + threadID
     os.chdir(path)
     
@@ -673,6 +675,7 @@ def combineFullComments():
     mapSection = '-map [outv] -map [outa] VideoBody.mp4'
     transitionPath = " -i "+repoPath+"SoundFiles\\StaticTransition.mp4"
 
+    print("Getting the necessary files")
     broken = False
     for folder in os.scandir(threadPath):
         if broken == True:
@@ -681,7 +684,7 @@ def combineFullComments():
         if os.path.isdir(folderDir):
             for file in os.scandir(folderDir):
                 if str(file.name) == "fullComment.mp4":
-                    print("(Full Comment)Accessing:", folder.name)
+                    print("Comment ID:", folder.name)
                     firstLineBegining = firstLineBegining + " -i " + folder.name + "\\fullComment.mp4"
                     filterBeginning = filterBeginning + '[' + str(n) + ':v]['+ str(n) + ':a]'
                     n += 1
@@ -692,7 +695,7 @@ def combineFullComments():
                     
     filterEnd = 'concat=n='+str(n)+':v=1:a=1[outv][outa]\" ^'
     compileCode = firstLineBegining + lineEnd + filterBeginning + filterEnd + mapSection
-    print(compileCode)
+    print("\n Combining files")
     subprocess.call(compileCode, shell=True)
     #subprocess.call('ffmpeg -i eqzplik\\fullComment.mp4 -i eqzy9tl\\fullComment.mp4 -i er0g23o\\fullComment.mp4 ^ -filter_complex \"[0:v:0][0:a:0][1:v:0][1:a:0][2:v:0][2:a:0]concat=n=3:v=1:a=1[outv][outa]\" ^-map \"[outv]\" -map \"[outa]\" CompleteVideo.mp4', shell=True)
 
@@ -727,7 +730,7 @@ def formatPoints(points):
 
 
 def getAudioFiles():
-    print("Getting audio files: ", threadID)
+    print("\nGetting audio files using Balabolka | threadID: ", threadID)
     #time.sleep(10)
     global balabolkaFirstTimeSetup
     maxCommentVideoLength = commentVideoLength * 60
@@ -811,13 +814,14 @@ def getAudioFiles():
                     seconds = len(f) / f.samplerate
                     currentThreadLength += seconds
 
-            print("currentTotal: ", math.floor(currentThreadLength), "of", math.floor(maxCommentVideoLength))
+            #print("Total audio length in seconds: ", math.floor(currentThreadLength), "of", math.floor(maxCommentVideoLength))
                 
 
     pressHoldRelease(('shift', 'ctrl', 'f4'))
     time.sleep(1)
     mousePos((170, 1055))
     leftClick()
+    print("Audio obtained")
 
 
 # for pulling comments
@@ -855,7 +859,7 @@ def queueCombineFullVideo():
 
 
 def finishVideo():
-    print("Finishing Video: ", threadID)
+    print("\nFinishing Video (Adding beginning, ending and music): ", threadID)
     path = repoPath + 'Videos\\' + threadID
     music = repoPath + "SoundFiles\\SelectedSoundtrack.mp3"
     intro = path + "\\Title\\Intro.mp4"
@@ -871,6 +875,7 @@ def finishVideo():
 
 
 def markAsCompleted():
+    print("\nMarking video as completed")
     global startTime
     subredditsTxt = repoPath + "TXTFiles\\completedSubreddits.txt"
     with open(subredditsTxt,'a+') as g:
@@ -896,7 +901,9 @@ def commentVisiblitySetting(visSetting):
         divVis("commentFooter", "none")
 
 
+# Adds the video to upload queue
 def queueVideo():
+    print("\nAdding video to upload queue")
     txtFile = repoPath + "TXTFiles\\scheduleVideosQueue.txt"
     with open(txtFile,'a+') as f:
         title = questionDict[threadID]["title"]
@@ -936,10 +943,16 @@ def mainVideoCreation():
     commentVideoLength = input()
     if commentVideoLength == "":
         commentVideoLength = 10
+    else:
+        commentVideoLength = int(commentVideoLength)
+    
     print("Enter the number of videos you want to create | Default: 1")
     creationAmount = input()
     if creationAmount == "":
         creationAmount = 1
+    else:
+        creationAmount = int(creationAmount)
+    
     print("Enter the name of the text file name that contains the subreddits you want to make a video of | Default: SubredditsAITA")
     subredditsTextFileName = input()
     if subredditsTextFileName == "":
@@ -961,7 +974,7 @@ def mainVideoCreation():
         driver.get("http://localhost//"+localServerFolder+"//" + questionHTMLName + ".html")
         getThreadOpeningVideo()
 
-        print("\nCreating comment folders")
+        print("\nCreating a folder for each comment, splitting each comment into pieces and creating a sequence of images")
         print("CommentIDs:")
         # Iterates over every comment in that post
         for comment in commentDict[key]:
@@ -1059,15 +1072,43 @@ def mainVideoCreation():
             #break
 
         getAudioFiles()
-        makeCommentsVideo()
-        combineFullComments()
-        finishVideo()
-        markAsCompleted()
-        queueVideo()
+        try:
+            makeCommentsVideo()
+            combineFullComments()
+            finishVideo()
+            markAsCompleted()
+            queueVideo()
+        except Exception as e:
+            print(e)
+            threadID = threadID + (" (Failed)")
+            markAsCompleted()
+            
         
     driver.quit()
-    print("---------------Finished---------------")
+    print("---------------Finished---------------\n\n")
 
+
+def moveCompletedVideos():
+    print("Moving completed videos")
+    completedTXT = repoPath + "TXTFiles\\completedSubreddits.txt"
+    
+    existingSubs = []
+    with open(completedTXT) as g:
+        existingSubs = g.readlines()
+
+    for folder in os.scandir(repoPath + "\\Videos"):
+        if folder.name in str(existingSubs):
+            print(folder.name," Found!")
+            shutil.move(repoPath + "Videos\\" + folder.name, repoPath + "Videos\\AITA Completed")
+        else:
+            # If for some reason the completed video has not been marked as so
+            global threadID
+            global startTime
+            threadID = folder.name
+            startTime = 0
+            markAsCompleted()
+            
+    g.close()
 
 def queueQuestionsIntoFile():
     global hot_python
@@ -1161,29 +1202,39 @@ def resetVariables():
         print("Please enter a Y or N")
 
 
+def inputInt():
+    while True:
+        selection = input()
+        try: 
+            selection = int(selection)
+        except:
+            print("Please enter an integer value")
+        else:
+            return selection
+
+
 def selectionMenu():
     while True:
         print("""Enter the number for the function you want
                  \n1. Create and schedule a video
                  \n2. Upload a video
-                 \n3. Exit
+                 \n3. Move uploaded videos to a different folder (visual cleanliness)
+                 \n4. Exit
               """)
         
-        while True:
-            selection = input()
-            try: 
-                selection = int(selection)
-                break
-            except:
-                print("Please enter a valid value")
+        selection = inputInt()
             
 
         if selection == 1:
             resetVariables()
             mainVideoCreation()
         elif selection == 2:
-            uploadVideo()
+            for i in range(0, 5):
+                uploadVideo()
+                time.sleep(30)
         elif selection == 3:
+            moveCompletedVideos()
+        elif selection == 4:
             exit()
     
 selectionMenu()

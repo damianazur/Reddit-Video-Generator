@@ -1,30 +1,14 @@
-threadID = barg6e; title = AITA for grounding my daughter the way I did?
-threadID = bkyn9c; title = AITA for choosing my brother over my marriage?
-threadID = bq2hbt; title = AITA forbidding my wife from using my daughters old room?
-threadID = bs3303; title = AITA for letting my picky eater child go hungry?
-threadID = bsfwo8; title = AITA for taking back the birthday gift I gave my sister?
-threadID = bvk83l; title = AITA for stranding a date without a ride because she was ignoring me?
-threadID = byiwjh; title = AITA for exposing the real reason my sister and her bf broke up?
-threadID = bzce02; title = AITA for refusing to meet my wife's ex-boyfriend?
-threadID = bzr0h7; title = AITA for serving myself the biggest piece of meat?
-threadID = c219rs; title = AITA for forbidding my wife to go to her affair partner's funeral?
-threadID = c2esxa; title = AITA for telling people my sister had an abortion?
-threadID = c5eeb5; title = AITA for spraying the neighborhood kids with my garden hose?
-threadID = c6hnjh; title = AITA for letting my date pay for dinner?
-threadID = c6t9kj; title = AITA for yelling at a little girl to get out of my face?
-threadID = c6xdyj; title = AITA for telling my mom she’s a whore?
-threadID = c9gtj9; title = AITA for not helping my son and his wife with my grandson?
-threadID = c9uay1; title = AITA for suggesting that my sister chose an easy love?
-threadID = ca15qi; title = AITA for being mad my girlfriend took my keys?
-threadID = ca83jg; title = AITA for forcing my son to see how difficult it is to raise a baby?
-threadID = cb10pv; title = AITA for yelling at my sister in law?
-threadID = cblw2u; title = AITA for refusing to pay at a restaurant that was false advertising?
-threadID = ccnvdo; title = AITA for refusing to accept my parents "gift" and then walking out?
-threadID = cdc0q0; title = AITA for not wanting to pick up my wife from the airport at 12:30 AM?
-threadID = ce0nve; title = WIBTA if I gave my neighbor the rest of his cigarette butts back?
-threadID = ch3vqi; title = AITA for serving a pregnant woman a non-alcoholic cocktail?
-threadID = cj8qg9; title = WIBTA if I don’t let my daughter put a lock on her door?
-threadID = clx62w; title = AITA for being a "Karen" about my car being "fixed"?
-threadID = cnml52; title = AITA for suggesting my 7yo name his new stuffed tiger "Tig Bitties"?
-threadID = cohdqj; title = AITA for ruining both my parents marriages for disowning me?
-threadID = cs0bfh; title = AITA for asking my brother not to bring his boyfriend to my wedding?
+threadID = ct8w0a; title = AITA for not shaving my legs for work?
+threadID = cugrhz; title = AITA for not honoring my son's punishment?
+threadID = b5o8t6; title = AITA for having an Almanac?
+threadID = c41y2n; title = AITA for showering my niece?
+threadID = cunlba; title = AITA for exploding on my father's wife?
+threadID = bi0ljh; title = AITA for skipping my child's birth to see my dying father?
+threadID = bf892b; title = AITA for not paying for the meal?
+threadID = bnxeao; title = AITA For telling step-daughter she's the reason for divorce?
+threadID = c6a8ka; title = AITA for ditching my date and causing a scene?
+threadID = c4p4b9; title = AITA for not wanting to share my son?
+threadID = blpyy3; title = AITA for refusing to pay alimony to my cheating ex-wife?
+threadID = buiasv; title = AITA - I moved for my husband's job, my kids now hate me?
+threadID = b4vc6m; title = AITA for telling my boyfriend he has a small penis?
+threadID = cil848; title = AITA for avoiding taking classes taught by professors with accents?

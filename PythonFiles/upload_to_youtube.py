@@ -92,7 +92,8 @@ def resumable_upload(request, resource, method):
                 elif method != 'insert' or 'id' not in response:
                     print("Upload not successful")
                     print(response) 
-                else: 
+                else:
+                    print("Upload not successful: Unknown")
                     exit("The file upload failed with an unexpected response: % s" % response) 
                             
         except HttpError as e: 
@@ -364,9 +365,9 @@ def uploadMainFunction(properties):
         firstLineDel(REPO_PATH + "TXTFiles\\ScheduleVideosQueue.txt")
             
         time.sleep(10)
-        
-        setThumbnail(LATEST_VIDEO_ID, thumbnailPath, client)
+
         removeScheduleTime(scheduleTime)
+        setThumbnail(LATEST_VIDEO_ID, thumbnailPath, client)
 
 
 def dictToFile(filePath, dictionary):

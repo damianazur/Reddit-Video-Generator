@@ -1,1 +1,1 @@
-thumbnailIndex = 14
+thumbnailIndex = 49
