@@ -1,8 +1,3 @@
-threadID = ct8w0a; title = AITA for not shaving my legs for work?
-threadID = cugrhz; title = AITA for not honoring my son's punishment?
-threadID = b5o8t6; title = AITA for having an Almanac?
-threadID = c41y2n; title = AITA for showering my niece?
-threadID = cunlba; title = AITA for exploding on my father's wife?
 threadID = bi0ljh; title = AITA for skipping my child's birth to see my dying father?
 threadID = bf892b; title = AITA for not paying for the meal?
 threadID = bnxeao; title = AITA For telling step-daughter she's the reason for divorce?
@@ -12,3 +7,27 @@ threadID = blpyy3; title = AITA for refusing to pay alimony to my cheating ex-wi
 threadID = buiasv; title = AITA - I moved for my husband's job, my kids now hate me?
 threadID = b4vc6m; title = AITA for telling my boyfriend he has a small penis?
 threadID = cil848; title = AITA for avoiding taking classes taught by professors with accents?
+threadID = b5a1yu; title = AITA for telling a friend's girlfriend that she's spoiled?
+threadID = azofrl; title = AITA for not being attracted to my girlfriend’s body?
+threadID = b12st4; title = AITA for being mad at my wife for dumpster diving?
+threadID = bjt5hg; title = AITA for not wanting to be involved with a child I helped conceive?
+threadID = bj1yn3; title = AITA for telling my friend's husband about her secret food stash?
+threadID = cucz2s; title = AITA for telling the barista that my girlfriend is with me?
+threadID = cwg4ez; title = AITA for telling my cousins the truth about their parents?
+threadID = cpn67z; title = AITA for naming my dog Askim?
+threadID = aygsfl; title = AITA for feeding my vegan nephew meat?
+threadID = bx5oac; title = AITA for no longer wanting my trans cousin in my wedding party?
+threadID = ck7l97; title = AITA for not wanting my in-laws to visit our new baby?
+threadID = btgyy8; title = WIBTA If I kick my boyfriend out of my house over chicken?
+threadID = cn1hmi; title = WIBTA if I cancelled the adoption of my stepdaughter?
+threadID = bvh33v; title = AITA for "allowing" my 16yo daughter to get a tattoo?
+threadID = bhz0i8; title = AITA for not caring when my friend came out of the closet?
+threadID = aqzqc6; title = AITA for firing employee of 20+ years for calling my niece "Princess"?
+threadID = cgiexb; title = AITA for teasing my wife about finally catching her shitting?
+threadID = bxk596; title = AITA for telling strangers that my wife and I are married?
+threadID = c9a9pv; title = AITA for asking to be charged for a man's haircut when I am a woman?
+threadID = ctqxqd; title = AITA for subjecting my boyfriend to my nakedess?
+threadID = cc5orf; title = AITA for making a baby cry to save $100?
+threadID = bqoxdt; title = AITA for doing the same thing as my wife?
+threadID = bcpbxl; title = AITA for not wanting to pay for a diamond ring?
+threadID = b8sdv1; title = AITA for changing my mind midway through buying a stranger coffee?

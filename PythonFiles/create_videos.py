@@ -58,11 +58,11 @@ localServerFolder = "TR-Local-Server-Files"
 """
 
 import praw
-reddit = praw.Reddit(client_id = 'W7V-Goda74pQFA',
-                     client_secret = 'H-gI-Ftr8EuSCNliweavIzhnGFM',
-                     username = 'AzureScale',
-                     password = 'notrandom123',
-                     user_agent = 'AzureScale1')
+reddit = praw.Reddit(client_id = 'hSUDVwIzzEn42A',
+                     client_secret = 'KGiS5WI0WKXy765aoHv5IaAocxQ',
+                     username = 'TalkRedditApp',
+                     password = 'GenericPassword123',
+                     user_agent = 'TalkRedditApp1')
 
 subreddit = reddit.subreddit('AmItheAsshole')
 
